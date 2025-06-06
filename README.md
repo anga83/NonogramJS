@@ -4,6 +4,8 @@ A fully-featured **Nonogram** (also known as Picross or Paint by Numbers) puzzle
 
 [<kbd> <br> ➡️ Play it right now in your browser <br> </kbd>](https://htmlpreview.github.io/?https://github.com/anga83/NonogramJS/blob/main/NonogramJS.html)
 
+![Screenshot](screenshot.png)
+
 ## 🎯 Game Overview
 
 Nonogram is a logic puzzle where you fill in cells on a grid to reveal a hidden picture. The numbers on the sides of the grid tell you how many consecutive cells should be filled in each row and column.
