@@ -3,7 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nonogramm Web Game</title>
+    <title>Nonogramm Game</title>
+
+    <!-- 
+    Version History:
+        Version 2.3 - Added tool selection via buttons to sidebar, added edges auto-crossing, added highscore functionality including a menu with import/export/clear options
+        Version 2.2 - Added zoom and pan functionality
+        Version 2.1 - Initial Release
+    -->
+
     <style>
         * {
             margin: 0;
@@ -28,7 +36,7 @@
             border-right: 2px solid #c8c8c8;
             padding: 20px;
             overflow-y: auto;
-            position: relative; /* Diese Zeile hinzufügen */
+            position: relative;
         }
 
         .title {
@@ -116,6 +124,37 @@
             margin-bottom: 10px;
         }
 
+        .tool-grid {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .tool-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+            min-width: 60px;
+        }
+
+        .tool-item:hover {
+            background-color: #f0f0f5;
+        }
+
+        .tool-item.active {
+            background-color: #dae8ff;
+            border: 2px solid #0050dc;
+        }
+
+        .tool-item.inactive {
+            opacity: 0.6;
+        }
+
         .tool-icon {
             width: 40px;
             height: 40px;
@@ -124,6 +163,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            margin-bottom: 5px;
+        }
+
+        .tool-label {
+            font-size: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .tool-item.active .tool-label {
+            color: #0050dc;
         }
 
         .color-section {
@@ -149,23 +200,57 @@
         }
 
         .score-section {
-            margin-top: auto;
             padding: 10px;
             background-color: #dae8ff;
             border-radius: 5px;
+            flex: 1;
+            min-height: 60px; /* Einheitliche Höhe */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
         }
 
-        .score-section h3 {
-            font-size: 14px;
-            font-weight: bold;
+        .score-section div {
+            margin: 0;
+            line-height: 1.2;
             color: #0050dc;
         }
 
+        .score-section div:first-child {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .score-section div:last-child {
+            font-size: 12px;
+        }
+
+
         .timer-section {
-            margin-left: 10px;
             padding: 10px;
             background-color: #e6e6e6;
             border-radius: 5px;
+            flex: 1;
+            min-height: 60px; /* Einheitliche Höhe */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .timer-section div {
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .timer-section div:first-child {
+            font-size: 12px;
+        }
+
+        .timer-section div:last-child {
+            font-size: 14px;
+            font-weight: bold;
         }
 
         .game-area {
@@ -471,20 +556,98 @@
         .highscore-section {
             margin-bottom: 15px;
             font-size: 11px;
+            border: 1px solid #e0e0e0; /* Rahmen für bessere Sichtbarkeit */
+            padding: 8px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .highscore-section-mini {
+            padding: 10px;
+            background-color: #b1f7ad;
+            border-radius: 5px;
+            flex: 1;
+            min-height: 60px; /* Einheitliche Höhe */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .highscore-section-mini div {
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .highscore-section-mini strong {
+            color: #0d9e05;
+            font-size: 12px;
+        }
+
+        .highscore-section-mini .highscore-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #0d9e05;
         }
 
         .highscore-list {
             max-height: 100px;
             overflow-y: auto;
-            border: 1px solid #e0e0e0;
             padding: 5px;
-            background-color: #f9f9f9;
+            background-color: white;
             border-radius: 3px;
+            margin-top: 5px;
         }
 
         .highscore-entry {
-            padding: 2px 0;
+            padding: 3px 0;
             font-size: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .highscore-entry:last-child {
+            border-bottom: none;
+        }
+
+        /* Highscore Menü */
+        .highscore-menu {
+            position: absolute;
+            bottom: 100%; /* Öffnet sich nach oben */
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid #b4b4be;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: none;
+            margin-bottom: 5px;
+            margin-right: 5px;
+            min-width: 140px;
+        }
+
+        .highscore-menu-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 11px;
+            border-bottom: 1px solid #f0f0f0;
+            white-space: nowrap;
+            text-align: left;
+        }
+
+        .highscore-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .highscore-menu-item:hover {
+            background-color: #f0f0f5;
+        }
+
+        .highscore-menu-item.danger:hover {
+            background-color: #ffe6e6;
+            color: #dc3232;
         }
 
         .version-info {
@@ -572,9 +735,19 @@
 
             <div class="tool-section">
                 <div class="control-label">Aktuelles Werkzeug:</div>
-                <div class="tool-display">
-                    <div class="tool-icon" id="toolIcon"></div>
-                    <span id="toolName">Stift</span>
+                <div class="tool-grid">
+                    <div class="tool-item active" id="toolPen" data-tool="pen">
+                        <div class="tool-icon" id="toolIconPen"></div>
+                        <div class="tool-label" id="toolLabelPen">Stift</div>
+                    </div>
+                    <div class="tool-item inactive" id="toolCross" data-tool="cross">
+                        <div class="tool-icon" id="toolIconCross"></div>
+                        <div class="tool-label" id="toolLabelCross">Durchstreichen</div>
+                    </div>
+                    <div class="tool-item inactive" id="toolNote" data-tool="note">
+                        <div class="tool-icon" id="toolIconNote"></div>
+                        <div class="tool-label" id="toolLabelNote">Notiz</div>
+                    </div>
                 </div>
             </div>
 
@@ -586,16 +759,25 @@
 
             <div style="display: flex; gap: 10px; margin-top: auto;">
                 <div class="score-section">
-                    <h3 id="pointsDisplay">Punkte: 0</h3>
+                    <div id="pointsDisplay">Punkte: 0</div>
                     <div id="comboDisplay">Combo: x0</div>
                 </div>
                 <div class="timer-section">
                     <div><strong>Zeit:</strong></div>
                     <div id="timerDisplay">00:00</div>
                 </div>
+                <div class="highscore-section-mini" id="highscoreSection">
+                    <div><strong>Highscore:</strong></div>
+                    <div class="highscore-value" id="highscoreValue">0</div>
+                    <div class="highscore-menu" id="highscoreMenu">
+                        <div class="highscore-menu-item" id="clearHighscores">Highscore löschen</div>
+                        <div class="highscore-menu-item" id="exportHighscores">Highscore exportieren</div>
+                        <div class="highscore-menu-item" id="importHighscores">Highscore importieren</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="version-info">v2.2</div>
+            <div class="version-info">v2.3</div>
             
         </div>
 
@@ -656,6 +838,13 @@
                         newHighscore: "🎉 Neuer Rekord!",
                         highscores: "Bestenliste",
                         noHighscores: "Noch keine Rekorde",
+                        highscoreMenuClear: "Highscore löschen",
+                        highscoreMenuExport: "Highscore exportieren", 
+                        highscoreMenuImport: "Highscore importieren",
+                        highscoreConfirmClear: "Alle Highscores löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+                        highscoreConfirmImport: "Highscores importieren? Bestehende Daten werden überschrieben.",
+                        highscoreImportSuccess: "Highscores erfolgreich importiert!",
+                        highscoreImportError: "Fehler beim Importieren: Ungültige JSON-Datei.",
                         colors: {
                             "Schwarz": "Schwarz",
                             "Rot": "Rot", 
@@ -697,8 +886,15 @@
                         errorFreeBonus: "Error-Free Bonus",
                         totalScore: "Total Score",
                         newHighscore: "🎉 New Record!",
-                        highscores: "High Scores",
+                        highscores: "Highscore",
                         noHighscores: "No records yet",
+                        highscoreMenuClear: "Clear Highscores",
+                        highscoreMenuExport: "Export Highscores",
+                        highscoreMenuImport: "Import Highscores", 
+                        highscoreConfirmClear: "Delete all highscores? This action cannot be undone.",
+                        highscoreConfirmImport: "Import highscores? Existing data will be overwritten.",
+                        highscoreImportSuccess: "Highscores imported successfully!",
+                        highscoreImportError: "Import error: Invalid JSON file.",
                         colors: {
                             "Schwarz": "Black",
                             "Rot": "Red",
@@ -752,118 +948,163 @@
                 }
             }
 
-            getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
+            setCookie(name, value, days) {
+                try {
+                    if (typeof(Storage) !== "undefined") {
+                        localStorage.setItem(name, value);
+                    }
+                    // Fallback zu Cookie
+                    const expires = new Date();
+                    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+                    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+                } catch (error) {
+                    console.warn('Sprache konnte nicht gespeichert werden:', error);
+                }
             }
 
-            setCookie(name, value, days) {
-                const expires = new Date();
-                expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-                document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+            getCookie(name) {
+                try {
+                    if (typeof(Storage) !== "undefined") {
+                        const stored = localStorage.getItem(name);
+                        if (stored) return stored;
+                    }
+                    // Fallback zu Cookie
+                    const value = `; ${document.cookie}`;
+                    const parts = value.split(`; ${name}=`);
+                    if (parts.length === 2) return parts.pop().split(';').shift();
+                } catch (error) {
+                    console.warn('Sprache konnte nicht geladen werden:', error);
+                }
+                return null;
             }
         }
 
         class HighScoreManager {
             constructor() {
-                this.cookieName = 'nonogram_highscores';
-                this.maxScores = 5;
+                this.storageKey = 'nonogram_highscores';
+                // Bei Initialisierung alte Daten löschen
+                this.migrateLegacyData();
+            }
+
+            migrateLegacyData() {
+                try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    if (stored) {
+                        const data = JSON.parse(stored);
+                        // Prüfen ob alte Array-Struktur vorhanden
+                        let needsMigration = false;
+                        for (const key in data) {
+                            if (Array.isArray(data[key])) {
+                                needsMigration = true;
+                                break;
+                            }
+                        }
+                        
+                        if (needsMigration) {
+                            console.log('Migriere alte Highscore-Daten...');
+                            localStorage.removeItem(this.storageKey);
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Fehler bei Migration:', error);
+                    localStorage.removeItem(this.storageKey);
+                }
             }
 
             getHighScores(gridSize, isPredefinedImage = false) {
-                const allScores = this.loadFromCookie();
+                const allScores = this.loadFromStorage();
                 const key = `${gridSize}_${isPredefinedImage ? 'predefined' : 'random'}`;
-                return allScores[key] || [];
+                const result = allScores[key];
+                
+                // Sicherheitsprüfung: Falls es ein Array ist, nehme den ersten Wert oder 0
+                if (Array.isArray(result)) {
+                    console.warn('Alte Array-Daten gefunden, wird bereinigt...');
+                    return result.length > 0 ? (result[0].score || 0) : 0;
+                }
+                
+                return typeof result === 'number' ? result : 0;
             }
 
             addScore(gridSize, score, time, errors, isPredefinedImage = false) {
-                const allScores = this.loadFromCookie();
-                const key = `${gridSize}_${isPredefinedImage ? 'predefined' : 'random'}`;
-                
-                if (!allScores[key]) {
-                    allScores[key] = [];
+                try {
+                    const allScores = this.loadFromStorage();
+                    const key = `${gridSize}_${isPredefinedImage ? 'predefined' : 'random'}`;
+                    
+                    const currentBest = this.getHighScores(gridSize, isPredefinedImage);
+                    
+                    // Nur speichern wenn neuer Score besser ist
+                    if (score > currentBest) {
+                        allScores[key] = score; // Direkt als Zahl speichern
+                        this.saveToStorage(allScores);
+                        return true; // Neuer Rekord
+                    }
+                    
+                    return false; // Kein neuer Rekord
+                } catch (error) {
+                    console.warn('Highscore konnte nicht gespeichert werden:', error);
+                    return false;
                 }
-
-                const newScore = {
-                    score: score,
-                    time: time,
-                    errors: errors,
-                    date: new Date().toISOString()
-                };
-
-                allScores[key].push(newScore);
-                allScores[key].sort((a, b) => b.score - a.score);
-                allScores[key] = allScores[key].slice(0, this.maxScores);
-
-                this.saveToCookie(allScores);
-                
-                // Prüfen ob es ein neuer Rekord ist (Top 3)
-                const position = allScores[key].findIndex(s => 
-                    s.score === score && s.time === time && s.errors === errors
-                );
-                return position < 3;
             }
 
-            loadFromCookie() {
-                const cookie = this.getCookie(this.cookieName);
-                return cookie ? JSON.parse(cookie) : {};
-            }
-
-            saveToCookie(scores) {
-                const expires = new Date();
-                expires.setTime(expires.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 Jahr
-                document.cookie = `${this.cookieName}=${JSON.stringify(scores)};expires=${expires.toUTCString()};path=/`;
-            }
-
-            getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-            }
-
-            displayHighScores(gridSize, isPredefinedImage = false) {
-                const scores = this.getHighScores(gridSize, isPredefinedImage);
-                let container = document.getElementById('highscoreContainer');
-                
-                if (!container) {
-                    // Container erstellen falls nicht vorhanden
-                    container = document.createElement('div');
-                    container.id = 'highscoreContainer';
-                    container.className = 'highscore-section';
-                    document.querySelector('.sidebar').appendChild(container);
+            loadFromStorage() {
+                try {
+                    if (typeof(Storage) === "undefined") {
+                        return this.loadFromMemory();
+                    }
+                    
+                    const stored = localStorage.getItem(this.storageKey);
+                    return stored ? JSON.parse(stored) : {};
+                } catch (error) {
+                    console.warn('Fehler beim Laden der Highscores:', error);
+                    return this.loadFromMemory();
                 }
-
-                const title = window.game.localization.getString('highscores');
-                const noScoresText = window.game.localization.getString('noHighscores');
-                
-                if (scores.length === 0) {
-                    container.innerHTML = `
-                        <div class="control-label">${title}:</div>
-                        <div class="highscore-list">${noScoresText}</div>
-                    `;
-                    return;
-                }
-
-                let html = `<div class="control-label">${title}:</div><div class="highscore-list">`;
-                scores.forEach((score, index) => {
-                    const timeStr = this.formatTime(score.time);
-                    html += `
-                        <div class="highscore-entry">
-                            ${index + 1}. ${score.score}pts (${timeStr}, ${score.errors} errors)
-                        </div>
-                    `;
-                });
-                html += '</div>';
-                
-                container.innerHTML = html;
             }
 
-            formatTime(milliseconds) {
-                const seconds = Math.floor(milliseconds / 1000);
-                const minutes = Math.floor(seconds / 60);
-                const remainingSeconds = seconds % 60;
-                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            saveToStorage(scores) {
+                try {
+                    if (typeof(Storage) === "undefined") {
+                        this.saveToMemory(scores);
+                        return;
+                    }
+                    
+                    localStorage.setItem(this.storageKey, JSON.stringify(scores));
+                } catch (error) {
+                    console.warn('Fehler beim Speichern der Highscores:', error);
+                    this.saveToMemory(scores);
+                }
+            }
+
+            loadFromMemory() {
+                if (!window.nonogramHighscores) {
+                    window.nonogramHighscores = {};
+                }
+                return window.nonogramHighscores;
+            }
+
+            saveToMemory(scores) {
+                window.nonogramHighscores = scores;
+            }
+
+            // Debug-Funktion
+            debugShowAllScores() {
+                const allScores = this.loadFromStorage();
+                console.log('Alle gespeicherten Highscores:', allScores);
+                return allScores;
+            }
+
+            // Funktion zum Zurücksetzen aller Highscores
+            clearAllScores() {
+                try {
+                    if (typeof(Storage) !== "undefined") {
+                        localStorage.removeItem(this.storageKey);
+                    }
+                    if (window.nonogramHighscores) {
+                        delete window.nonogramHighscores;
+                    }
+                    console.log('Alle Highscores wurden gelöscht');
+                } catch (error) {
+                    console.warn('Fehler beim Löschen der Highscores:', error);
+                }
             }
         }
 
@@ -994,6 +1235,7 @@
                 this.setupEventListeners();
                 this.updateToolDisplay();
                 this.setupLanguageButtons();
+                this.setupHighscoreMenu();
                 this.updateAllTexts();
             }
 
@@ -1048,6 +1290,26 @@
                 
                 // Verhindere Kontextmenü bei Rechtsklick
                 document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+                // Tool-Auswahl Events
+                this.setupToolEvents();
+            }
+
+            setupToolEvents() {
+                document.getElementById('toolPen').addEventListener('click', () => {
+                    this.tool = this.FILLED;
+                    this.updateToolDisplay();
+                });
+                
+                document.getElementById('toolCross').addEventListener('click', () => {
+                    this.tool = this.CROSSED;
+                    this.updateToolDisplay();
+                });
+                
+                document.getElementById('toolNote').addEventListener('click', () => {
+                    this.tool = this.NOTE;
+                    this.updateToolDisplay();
+                });
             }
 
             handleKeyDown(event) {
@@ -1142,7 +1404,12 @@
                 const colorText = this.localization.getColorName(colorName);
                 document.getElementById('currentColorText').textContent = 
                     `${this.localization.getString('currentColor')}: ${colorText}`;
-                this.updateToolDisplay();
+                
+                // Pen Tool Icon Farbe aktualisieren
+                const penIcon = document.getElementById('toolIconPen');
+                if (penIcon) {
+                    penIcon.style.backgroundColor = this.colorPalette[this.selectedColor];
+                }
             }
 
             toggleTool() {
@@ -1172,34 +1439,53 @@
                         this.checkAndAutocrossCol(col);
                     }
                 }
+
+                this.checkAndAutocrossEdges();
             }
 
             updateToolDisplay() {
-                const toolIcon = document.getElementById('toolIcon');
-                const toolName = document.getElementById('toolName');
+                // Pen Tool Icon
+                const penIcon = document.getElementById('toolIconPen');
+                penIcon.innerHTML = '';
+                penIcon.style.backgroundColor = this.colorPalette[this.selectedColor];
                 
-                toolIcon.innerHTML = '';
+                // Cross Tool Icon
+                const crossIcon = document.getElementById('toolIconCross');
+                crossIcon.innerHTML = '';
+                crossIcon.style.backgroundColor = '#e6e6e6';
+                const cross1 = document.createElement('div');
+                const cross2 = document.createElement('div');
+                cross1.style.cssText = 'position: absolute; width: 20px; height: 2px; background: #dc3232; transform: rotate(45deg);';
+                cross2.style.cssText = 'position: absolute; width: 20px; height: 2px; background: #dc3232; transform: rotate(-45deg);';
+                crossIcon.appendChild(cross1);
+                crossIcon.appendChild(cross2);
                 
-                if (this.tool === this.FILLED) {
-                    toolIcon.style.backgroundColor = this.colorPalette[this.selectedColor];
-                    toolName.textContent = this.localization.getString('toolPen');
-                } else if (this.tool === this.CROSSED) {
-                    toolIcon.style.backgroundColor = '#e6e6e6';
-                    const cross1 = document.createElement('div');
-                    const cross2 = document.createElement('div');
-                    cross1.style.cssText = 'position: absolute; width: 20px; height: 2px; background: #dc3232; transform: rotate(45deg);';
-                    cross2.style.cssText = 'position: absolute; width: 20px; height: 2px; background: #dc3232; transform: rotate(-45deg);';
-                    toolIcon.style.position = 'relative';
-                    toolIcon.appendChild(cross1);
-                    toolIcon.appendChild(cross2);
-                    toolName.textContent = this.localization.getString('toolCross');
-                } else if (this.tool === this.NOTE) {
-                    toolIcon.style.backgroundColor = '#e6e6e6';
-                    const note = document.createElement('div');
-                    note.style.cssText = 'width: 8px; height: 8px; background: #8080c8; border-radius: 50%;';
-                    toolIcon.appendChild(note);
-                    toolName.textContent = this.localization.getString('toolNote');
-                }
+                // Note Tool Icon
+                const noteIcon = document.getElementById('toolIconNote');
+                noteIcon.innerHTML = '';
+                noteIcon.style.backgroundColor = '#e6e6e6';
+                const note = document.createElement('div');
+                note.style.cssText = 'width: 8px; height: 8px; background: #8080c8; border-radius: 50%;';
+                noteIcon.appendChild(note);
+                
+                // Tool Labels aktualisieren
+                document.getElementById('toolLabelPen').textContent = this.localization.getString('toolPen');
+                document.getElementById('toolLabelCross').textContent = this.localization.getString('toolCross');
+                document.getElementById('toolLabelNote').textContent = this.localization.getString('toolNote');
+                
+                // Aktives Tool markieren
+                document.querySelectorAll('.tool-item').forEach(item => {
+                    item.classList.remove('active', 'inactive');
+                    
+                    const toolType = item.dataset.tool;
+                    if ((this.tool === this.FILLED && toolType === 'pen') ||
+                        (this.tool === this.CROSSED && toolType === 'cross') ||
+                        (this.tool === this.NOTE && toolType === 'note')) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.add('inactive');
+                    }
+                });
             }
 
 
@@ -1504,6 +1790,7 @@
                 if (this.autoCrossMode && value !== this.NOTE) {
                     this.checkAndAutocrossRow(row);
                     this.checkAndAutocrossCol(col);
+                    this.checkAndAutocrossEdges();
                 }
                 
                 this.checkWin();
@@ -1589,6 +1876,144 @@
                     }
                     
                     this.updateColHint(col);
+                }
+            }
+
+            checkAndAutocrossEdges() {
+                // Zeilen prüfen
+                for (let row = 0; row < this.rows; row++) {
+                    this.checkRowEdges(row);
+                }
+                
+                // Spalten prüfen
+                for (let col = 0; col < this.cols; col++) {
+                    this.checkColEdges(col);
+                }
+            }
+
+            checkRowEdges(row) {
+                const hints = this.rowHints[row];
+                if (hints[0] === 0) return; // Leere Zeile
+                
+                const playerRow = this.playerGrid[row];
+                
+                // Links-Rand prüfen
+                this.checkLeftEdge(playerRow, hints, row);
+                
+                // Rechts-Rand prüfen
+                this.checkRightEdge(playerRow, hints, row);
+            }
+
+            checkLeftEdge(playerRow, hints, row) {
+                const firstHint = hints[0];
+                let consecutiveFilled = 0;
+                
+                // Zähle consecutive gefüllte Zellen von links
+                for (let col = 0; col < this.cols; col++) {
+                    if (playerRow[col] === this.FILLED) {
+                        consecutiveFilled++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Wenn wir genau die erste Hint-Anzahl erreicht haben
+                if (consecutiveFilled === firstHint && consecutiveFilled < this.cols) {
+                    const nextCol = consecutiveFilled;
+                    // Auto-Cross setzen wenn das nächste Feld leer oder Note ist
+                    if (playerRow[nextCol] === this.EMPTY || playerRow[nextCol] === this.NOTE) {
+                        playerRow[nextCol] = this.AUTO_CROSSED;
+                        this.updateCellDisplay(row, nextCol);
+                    }
+                }
+            }
+
+            checkRightEdge(playerRow, hints, row) {
+                const lastHint = hints[hints.length - 1];
+                let consecutiveFilled = 0;
+                
+                // Zähle consecutive gefüllte Zellen von rechts
+                for (let col = this.cols - 1; col >= 0; col--) {
+                    if (playerRow[col] === this.FILLED) {
+                        consecutiveFilled++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Wenn wir genau die letzte Hint-Anzahl erreicht haben
+                if (consecutiveFilled === lastHint && consecutiveFilled < this.cols) {
+                    const prevCol = this.cols - consecutiveFilled - 1;
+                    // Auto-Cross setzen wenn das vorherige Feld leer oder Note ist
+                    if (playerRow[prevCol] === this.EMPTY || playerRow[prevCol] === this.NOTE) {
+                        playerRow[prevCol] = this.AUTO_CROSSED;
+                        this.updateCellDisplay(row, prevCol);
+                    }
+                }
+            }
+
+            checkColEdges(col) {
+                const hints = this.colHints[col];
+                if (hints[0] === 0) return; // Leere Spalte
+                
+                // Spalten-Daten extrahieren
+                const playerCol = [];
+                for (let row = 0; row < this.rows; row++) {
+                    playerCol.push(this.playerGrid[row][col]);
+                }
+                
+                // Oben-Rand prüfen
+                this.checkTopEdge(playerCol, hints, col);
+                
+                // Unten-Rand prüfen
+                this.checkBottomEdge(playerCol, hints, col);
+            }
+
+            checkTopEdge(playerCol, hints, col) {
+                const firstHint = hints[0];
+                let consecutiveFilled = 0;
+                
+                // Zähle consecutive gefüllte Zellen von oben
+                for (let row = 0; row < this.rows; row++) {
+                    if (playerCol[row] === this.FILLED) {
+                        consecutiveFilled++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Wenn wir genau die erste Hint-Anzahl erreicht haben
+                if (consecutiveFilled === firstHint && consecutiveFilled < this.rows) {
+                    const nextRow = consecutiveFilled;
+                    // Auto-Cross setzen wenn das nächste Feld leer oder Note ist
+                    if (playerCol[nextRow] === this.EMPTY || playerCol[nextRow] === this.NOTE) {
+                        this.playerGrid[nextRow][col] = this.AUTO_CROSSED;
+                        this.updateCellDisplay(nextRow, col);
+                    }
+                }
+            }
+
+            checkBottomEdge(playerCol, hints, col) {
+                const lastHint = hints[hints.length - 1];
+                let consecutiveFilled = 0;
+                
+                // Zähle consecutive gefüllte Zellen von unten
+                for (let row = this.rows - 1; row >= 0; row--) {
+                    if (playerCol[row] === this.FILLED) {
+                        consecutiveFilled++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Wenn wir genau die letzte Hint-Anzahl erreicht haben
+                if (consecutiveFilled === lastHint && consecutiveFilled < this.rows) {
+                    const prevRow = this.rows - consecutiveFilled - 1;
+                    // Auto-Cross setzen wenn das vorherige Feld leer oder Note ist
+                    if (playerCol[prevRow] === this.EMPTY || playerCol[prevRow] === this.NOTE) {
+                        this.playerGrid[prevRow][col] = this.AUTO_CROSSED;
+                        this.updateCellDisplay(prevRow, col);
+                    }
                 }
             }
 
@@ -1824,6 +2249,98 @@
                 });
             }
 
+            setupHighscoreMenu() {
+                const highscoreSection = document.getElementById('highscoreSection');
+                const highscoreMenu = document.getElementById('highscoreMenu');
+                
+                // Menü öffnen/schließen
+                highscoreSection.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isVisible = highscoreMenu.style.display === 'block';
+                    highscoreMenu.style.display = isVisible ? 'none' : 'block';
+                });
+                
+                // Menü schließen bei Klick außerhalb
+                document.addEventListener('click', () => {
+                    highscoreMenu.style.display = 'none';
+                });
+                
+                // Highscore löschen
+                document.getElementById('clearHighscores').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (confirm(this.localization.getString('highscoreConfirmClear'))) {
+                        this.highScoreManager.clearAllScores();
+                        this.updateHighScoreDisplay();
+                        highscoreMenu.style.display = 'none';
+                    }
+                });
+                
+                // Highscore exportieren
+                document.getElementById('exportHighscores').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.exportHighscores();
+                    highscoreMenu.style.display = 'none';
+                });
+                
+                // Highscore importieren
+                document.getElementById('importHighscores').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.importHighscores();
+                    highscoreMenu.style.display = 'none';
+                });
+            }
+
+            exportHighscores() {
+                const highscores = this.highScoreManager.loadFromStorage();
+                const dataStr = JSON.stringify(highscores, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = 'nonogram_highscores.json';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            importHighscores() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.style.display = 'none';
+                
+                input.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            try {
+                                const importedData = JSON.parse(e.target.result);
+                                
+                                // Validierung der Daten
+                                if (typeof importedData === 'object' && importedData !== null) {
+                                    // Bestätigung vor Import
+                                    if (confirm(this.localization.getString('highscoreConfirmImport'))) {
+                                        this.highScoreManager.saveToStorage(importedData);
+                                        this.updateHighScoreDisplay();
+                                        alert(this.localization.getString('highscoreImportSuccess'));
+                                    }
+                                } else {
+                                    throw new Error('Invalid data format');
+                                }
+                            } catch (error) {
+                                alert(this.localization.getString('highscoreImportError'));
+                            }
+                        };
+                        reader.readAsText(file);
+                    }
+                    document.body.removeChild(input);
+                });
+                
+                document.body.appendChild(input);
+                input.click();
+            }
+
             updateLanguageButtonStates() {
                 const deBut = document.getElementById('langDe');
                 const enBut = document.getElementById('langEn');
@@ -1859,6 +2376,10 @@
                 
                 // Timer Label
                 document.querySelector('.timer-section div:first-child strong').textContent = this.localization.getString('time') + ':';
+
+                // Highscore Label
+                document.querySelector('.highscore-section-mini div:first-child strong').textContent = 
+                    this.localization.currentLanguage === 'de' ? 'Highscore:' : 'Highscore:';
                 
                 // Initiale UI-Texte setzen
                 this.updateUI(); // Dies wird die übersetzten Texte für Fehler, etc. setzen
@@ -1874,6 +2395,11 @@
                 
                 // Tool-Namen aktualisieren
                 this.updateToolDisplay();
+
+                // Highscore-Menü lokalisieren
+                document.getElementById('clearHighscores').textContent = this.localization.getString('highscoreMenuClear');
+                document.getElementById('exportHighscores').textContent = this.localization.getString('highscoreMenuExport');
+                document.getElementById('importHighscores').textContent = this.localization.getString('highscoreMenuImport');
                 
                 // Instructions aktualisieren
                 const instructions = document.querySelector('.instructions');
@@ -1937,7 +2463,8 @@
             }
 
             updateHighScoreDisplay() {
-                this.highScoreManager.displayHighScores(this.currentSize, this.loadedPredefinedImage);
+                const bestScore = this.highScoreManager.getHighScores(this.currentSize, this.loadedPredefinedImage);
+                document.getElementById('highscoreValue').textContent = bestScore;
             }
 
             zoomIn() {
@@ -2035,6 +2562,19 @@
 
         // Spiel initialisieren
         window.game = new NonogrammGame();
+
+        // Debug-Funktionen für Konsole verfügbar machen
+        window.debugHighscores = () => window.game.highScoreManager.debugShowAllScores();
+        window.clearHighscores = () => {
+            window.game.highScoreManager.clearAllScores();
+            window.game.updateHighScoreDisplay();
+        };
+
+        // Sofortiger Test ob Highscores angezeigt werden
+        setTimeout(() => {
+            console.log('Teste Highscore-Anzeige...');
+            window.testHighscore();
+        }, 1000);
     </script>
 </body>
 </html>
