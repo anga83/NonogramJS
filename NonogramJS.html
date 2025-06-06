@@ -174,10 +174,33 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            overflow: hidden; /* Für Pan-Feature */
+            position: relative;
         }
 
         .game-grid-container {
             position: relative;
+            transition: transform 0.2s ease; /* Smooth zoom/pan transitions */
+            transform-origin: center center;
+        }
+
+        .zoom-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .zoom-info.visible {
+            opacity: 1;
         }
 
         .game-grid {
@@ -468,7 +491,7 @@
             position: absolute;
             bottom: 5px;
             right: 10px;
-            font-size: 10px;
+            font-size: 11px;
             color: #888;
             opacity: 0.7;
         }
@@ -572,11 +595,12 @@
                 </div>
             </div>
 
-            <div class="version-info">v2.1</div>
+            <div class="version-info">v2.2</div>
             
         </div>
 
         <div class="game-area">
+            <div class="zoom-info" id="zoomInfo">Zoom: 100%</div>
             <div class="game-grid-container" id="gridContainer">
                 <div class="row-hints" id="rowHints"></div>
                 <div class="col-hints" id="colHints"></div>
@@ -912,6 +936,16 @@
                 this.dragValue = null;
                 this.dragColor = null;
 
+                // Zoom und Pan
+                this.zoomLevel = 1.0;
+                this.minZoom = 0.5;
+                this.maxZoom = 3.0;
+                this.zoomStep = 0.1;
+                this.panX = 0;
+                this.panY = 0;
+                this.panStep = 50;
+                this.zoomInfoTimeout = null;
+
                 // Vordefinierte Bilder
                 this.predefinedImages = {
                     "10,10": [
@@ -1058,6 +1092,33 @@
                     case 'E':
                         this.loadPredefinedImage();
                         break;
+                    case '+':
+                    case '=': // Für Tastaturen ohne separaten + Key
+                        this.zoomIn();
+                        break;
+                    case '-':
+                    case '_': // Für Tastaturen mit Shift + -
+                        this.zoomOut();
+                        break;
+                    case 'ArrowUp':
+                        event.preventDefault();
+                        this.panUp();
+                        break;
+                    case 'ArrowDown':
+                        event.preventDefault();
+                        this.panDown();
+                        break;
+                    case 'ArrowLeft':
+                        event.preventDefault();
+                        this.panLeft();
+                        break;
+                    case 'ArrowRight':
+                        event.preventDefault();
+                        this.panRight();
+                        break;
+                    case '0': // Reset zoom and pan
+                        this.resetZoomAndPan();
+                        break;
                 }
             }
 
@@ -1169,8 +1230,9 @@
                 
                 this.createGrid();
                 this.updateUI();
-                this.updateHighScoreDisplay(); // Hier bleibt es
+                this.updateHighScoreDisplay();
                 this.hideResultDialog();
+                this.resetZoomAndPan();
             }
 
             generatePuzzle() {
@@ -1822,6 +1884,9 @@
                         H/O: Notiz-Werkzeug aktivieren/deaktivieren<br>
                         A: Auto-Durchstreichen ein/aus<br>
                         C: Raster auf Fehler prüfen<br>
+                        +/-: Zoomen<br>
+                        Pfeiltasten: Spielfeld verschieben<br>
+                        0: Zoom/Position zurücksetzen<br>
                         Linksklick/Ziehen: Zelle markieren<br>
                         Rechtsklick: Alternative Markierung<br>
                         R: Puzzle zurücksetzen<br>
@@ -1835,6 +1900,9 @@
                         H/O: Toggle Note tool<br>
                         A: Toggle Auto-Cross<br>
                         C: Check grid for errors<br>
+                        +/-: Zoom in/out<br>
+                        Arrow keys: Pan grid<br>
+                        0: Reset zoom/position<br>
                         Left click/drag: Mark cell<br>
                         Right click: Alternative marking<br>
                         R: Reset puzzle<br>
@@ -1870,6 +1938,69 @@
 
             updateHighScoreDisplay() {
                 this.highScoreManager.displayHighScores(this.currentSize, this.loadedPredefinedImage);
+            }
+
+            zoomIn() {
+                if (this.zoomLevel < this.maxZoom) {
+                    this.zoomLevel = Math.min(this.maxZoom, this.zoomLevel + this.zoomStep);
+                    this.applyTransform();
+                    this.showZoomInfo();
+                }
+            }
+
+            zoomOut() {
+                if (this.zoomLevel > this.minZoom) {
+                    this.zoomLevel = Math.max(this.minZoom, this.zoomLevel - this.zoomStep);
+                    this.applyTransform();
+                    this.showZoomInfo();
+                }
+            }
+
+            panUp() {
+                this.panY += this.panStep;
+                this.applyTransform();
+            }
+
+            panDown() {
+                this.panY -= this.panStep;
+                this.applyTransform();
+            }
+
+            panLeft() {
+                this.panX += this.panStep;
+                this.applyTransform();
+            }
+
+            panRight() {
+                this.panX -= this.panStep;
+                this.applyTransform();
+            }
+
+            resetZoomAndPan() {
+                this.zoomLevel = 1.0;
+                this.panX = 0;
+                this.panY = 0;
+                this.applyTransform();
+                this.showZoomInfo();
+            }
+
+            applyTransform() {
+                const container = document.getElementById('gridContainer');
+                container.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoomLevel})`;
+            }
+
+            showZoomInfo() {
+                const zoomInfo = document.getElementById('zoomInfo');
+                zoomInfo.textContent = `Zoom: ${Math.round(this.zoomLevel * 100)}%`;
+                zoomInfo.classList.add('visible');
+                
+                // Auto-hide nach 2 Sekunden
+                if (this.zoomInfoTimeout) {
+                    clearTimeout(this.zoomInfoTimeout);
+                }
+                this.zoomInfoTimeout = setTimeout(() => {
+                    zoomInfo.classList.remove('visible');
+                }, 2000);
             }
 
 
