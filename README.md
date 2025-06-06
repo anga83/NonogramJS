@@ -1,4 +1,4 @@
-# Nonogram Game written in JavaScript
+# A Nonogram Game written in JavaScript
 
 A fully-featured **Nonogram** (also known as Picross or Paint by Numbers) puzzle game implemented as a single HTML file with JavaScript. This browser-based game offers a complete puzzle-solving experience with modern UI features and multilingual support.
 
