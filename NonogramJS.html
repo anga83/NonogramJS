@@ -2,11 +2,12 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nonogramm Game</title>
 
     <!-- 
     Version History:
+        Version 2.4 - Reworked grid generator to ensure puzzles are solvable, added experimental mobile view
         Version 2.3 - Added tool selection via buttons to sidebar, added edges auto-crossing, added highscore functionality including a menu with import/export/clear options
         Version 2.2 - Added zoom and pan functionality
         Version 2.1 - Initial Release
@@ -511,16 +512,34 @@
                 height: 20px;
             }
 
-            .row-hints .hint {
-                height: 20px;
-                min-width: 30px;
-                font-size: 9px;
+            .row-hints {
+                margin-right: 3px; /* Reduziert von 5px */
+                top: 5px; /* Reduziert von 10px wegen kleinerem Padding */
+                height: calc(100% - 10px); /* Angepasst an kleineres Padding */
             }
-
+            
+            .col-hints {
+                margin-bottom: 3px; /* Reduziert von 5px */
+                left: 5px; /* Reduziert von 10px wegen kleinerem Padding */
+                width: calc(100% - 10px); /* Angepasst an kleineres Padding */
+            }
+            
+            .row-hints .hint {
+                height: 25px; /* Exakt wie Zellhöhe */
+                min-width: 25px; /* Reduziert von 30px */
+                max-width: 80px; /* Reduziert von 120px */
+                font-size: 8px; /* Noch kleiner für bessere Passung */
+                padding: 1px 3px; /* Reduziertes Padding */
+                margin: 0.5px; /* Kleinere Abstände */
+            }
+            
             .col-hints .hint {
-                width: 20px;
-                min-height: 30px;
-                font-size: 9px;
+                width: 25px; /* Exakt wie Zellbreite */
+                min-height: 25px; /* Reduziert von 30px */
+                font-size: 8px; /* Noch kleiner für bessere Passung */
+                padding: 1px; /* Reduziertes Padding */
+                margin: 0.5px; /* Kleinere Abstände */
+                line-height: 1.0; /* Kompaktere Zeilenhöhe */
             }
         }
 
@@ -620,12 +639,11 @@
             background-color: white;
             border: 1px solid #b4b4be;
             border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1); /* Schatten nach oben */
             z-index: 1000;
             display: none;
-            margin-bottom: 5px;
-            margin-right: 5px;
-            min-width: 140px;
+            margin-bottom: 8px; /* Mehr Abstand zur Highscore-Box */
+            min-width: 160px;
         }
 
         .highscore-menu-item {
@@ -659,6 +677,248 @@
             opacity: 0.7;
         }
 
+        @media (max-width: 768px) {
+            /* Grundlegendes Layout */
+            .game-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                display: none; /* Desktop-Sidebar verstecken */
+            }
+            
+            /* Game Area */
+            .game-area {
+                padding: 10px;
+                padding-bottom: 80px; /* Platz für Bottom Bar */
+                height: 100vh;
+                overflow: hidden;
+                position: relative; /* Wichtig für Zoom-Containment */
+            }
+            
+            /* Zoom Container Anpassung */
+            .game-grid-container {
+                position: relative;
+                transition: transform 0.2s ease;
+                transform-origin: center center;
+                /* Sicherstellen dass Container im Viewport bleibt */
+                max-width: 100%;
+                max-height: calc(100vh - 100px); /* Platz für Bottom Bar lassen */
+            }
+            
+            /* Spielfeld-Anpassungen */
+            .cell {
+                width: 25px;
+                height: 25px;
+                border: 0.5px solid #c8c8c8; /* Dünnere Rahmen */
+            }
+            
+            .game-grid {
+                gap: 0.5px; /* Kleinere Abstände */
+                padding: 5px;
+                border: 1px solid #64648c;
+            }
+            
+            /* Hinweise-Anpassungen */
+            .row-hints {
+                margin-right: 3px;
+                top: 5px;
+                height: calc(100% - 10px);
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: stretch;
+            }
+            
+            .col-hints {
+                margin-bottom: 3px;
+                left: 5px;
+                width: calc(100% - 10px);
+                display: flex;
+                justify-content: flex-start;
+                align-items: stretch;
+            }
+            
+            .row-hints .hint {
+                height: 25px; /* Exakt wie Zellhöhe */
+                min-width: 25px;
+                max-width: 80px;
+                font-size: 8px;
+                padding: 1px 3px;
+                margin: 0.5px;
+                flex: 0 0 25px; /* Feste Höhe von 25px pro Hint */
+            }
+            
+            .col-hints .hint {
+                width: 25px; /* Exakt wie Zellbreite */
+                min-height: 25px;
+                font-size: 8px;
+                padding: 1px;
+                margin: 0.5px;
+                line-height: 1.0;
+                flex: 0 0 25px; /* Feste Breite von 25px pro Hint */
+            }
+            
+            /* Instructions verstecken */
+            .instructions {
+                display: none;
+            }
+            
+            /* Mobile Bottom Bar */
+            .mobile-bottom-bar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background-color: white;
+                border-top: 2px solid #c8c8c8;
+                padding: 10px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                z-index: 2000; /* Erhöht von 1500 */
+                min-height: 60px;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            }
+            
+            .mobile-tools {
+                display: flex;
+                gap: 8px;
+            }
+            
+            .mobile-tool-item {
+                width: 40px;
+                height: 40px;
+                border: 1px solid #b4b4be;
+                background-color: #f0f0f5;
+                cursor: pointer;
+                border-radius: 5px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                min-height: 40px;
+                min-width: 40px;
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            .mobile-tool-item.active {
+                background-color: #dae8ff;
+                border-color: #0050dc;
+                border-width: 2px;
+            }
+            
+            .mobile-info {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                font-size: 11px;
+                min-width: 80px;
+            }
+            
+            .mobile-size-dropdown {
+                position: relative;
+                font-size: 10px;
+                cursor: pointer;
+                padding: 4px 8px;
+                border: 1px solid #b4b4be;
+                border-radius: 3px;
+                background-color: #f0f0f5;
+                min-width: 70px;
+                text-align: center;
+                min-height: 44px; /* Touch-optimiert */
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            .mobile-size-options {
+                position: absolute;
+                bottom: 100%;
+                left: 0;
+                right: 0;
+                background-color: white;
+                border: 1px solid #b4b4be;
+                border-radius: 3px;
+                margin-bottom: 5px;
+                display: none;
+                max-height: 200px;
+                overflow-y: auto;
+                z-index: 2000;
+            }
+            
+            .mobile-size-option {
+                padding: 6px 8px;
+                cursor: pointer;
+                border-bottom: 1px solid #f0f0f0;
+                font-size: 10px;
+                min-height: 44px; /* Touch-optimiert */
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            .mobile-size-option:hover {
+                background-color: #e1e1eb;
+            }
+            
+            .mobile-size-option:last-child {
+                border-bottom: none;
+            }
+            
+            /* Result Dialog Anpassungen */
+            .result-overlay {
+                cursor: pointer; /* Zeigt an, dass geklickt werden kann */
+            }
+            
+            .result-dialog {
+                max-width: 90%;
+                padding: 20px;
+            }
+            
+            .result-title {
+                font-size: 20px;
+            }
+            
+            /* Zoom Info Position anpassen */
+            .zoom-info {
+                bottom: 80px; /* Über der Bottom Bar */
+                top: auto;
+            }
+        }
+
+        /* Mobile Bottom Bar für Desktop verstecken */
+        .mobile-bottom-bar {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+
+            /* Verhindert dass der ganze Viewport gezoomt wird */
+            body {
+                overflow: hidden;
+                position: fixed;
+                width: 100%;
+                height: 100%;
+            }
+
+            /* Mobile Bottom Bar noch sicherer fixieren */
+            .mobile-bottom-bar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background-color: white;
+                border-top: 2px solid #c8c8c8;
+                padding: 10px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                z-index: 2000;
+                min-height: 60px;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+                /* Zusätzliche Sicherung für WebKit */
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
+            }
+        }
+        
     </style>
 </head>
 <body>
@@ -777,7 +1037,7 @@
                 </div>
             </div>
 
-            <div class="version-info">v2.3</div>
+            <div class="version-info">v2.4</div>
             
         </div>
 
@@ -1236,7 +1496,20 @@
                 this.updateToolDisplay();
                 this.setupLanguageButtons();
                 this.setupHighscoreMenu();
+                this.setupMobileUI();
+                this.setupResizeHandler();
                 this.updateAllTexts();
+            }
+
+            setupResizeHandler() {
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        // Grid neu erstellen bei Größenänderung
+                        this.createGrid();
+                    }, 250);
+                });
             }
 
             setupDropdown() {
@@ -1260,6 +1533,136 @@
                         this.changeGridSize(size);
                         dropdownSelected.querySelector('span').textContent = option.querySelector('span').textContent;
                         dropdownOptions.style.display = 'none';
+                    }
+                });
+            }
+
+            setupMobileUI() {
+                // Mobile Tool Events
+                document.getElementById('mobileToolPen').addEventListener('click', () => {
+                    this.tool = this.FILLED;
+                    this.updateMobileToolDisplay();
+                });
+                
+                document.getElementById('mobileToolCross').addEventListener('click', () => {
+                    this.tool = this.CROSSED;
+                    this.updateMobileToolDisplay();
+                });
+                
+                document.getElementById('mobileToolNote').addEventListener('click', () => {
+                    this.tool = this.NOTE;
+                    this.updateMobileToolDisplay();
+                });
+                
+                // Mobile Size Dropdown
+                const mobileSizeDropdown = document.getElementById('mobileSizeDropdown');
+                const mobileSizeOptions = document.getElementById('mobileSizeOptions');
+                
+                mobileSizeDropdown.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    mobileSizeOptions.style.display = mobileSizeOptions.style.display === 'block' ? 'none' : 'block';
+                });
+                
+                document.addEventListener('click', (e) => {
+                    if (!mobileSizeDropdown.contains(e.target)) {
+                        mobileSizeOptions.style.display = 'none';
+                    }
+                });
+                
+                mobileSizeOptions.addEventListener('click', (e) => {
+                    const option = e.target.closest('.mobile-size-option');
+                    if (option) {
+                        const size = option.dataset.size;
+                        this.changeGridSize(size);
+                        document.getElementById('mobileSizeText').textContent = size.replace(',', 'x');
+                        mobileSizeOptions.style.display = 'none';
+                    }
+                });
+                
+                // Touch Events für Pinch-to-Zoom
+                this.setupTouchEvents();
+                
+                // Result Dialog Touch Events
+                this.setupResultDialogTouch();
+            }
+
+            updateMobileToolDisplay() {
+                document.querySelectorAll('.mobile-tool-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                const toolType = this.tool === this.FILLED ? 'pen' : 
+                                this.tool === this.CROSSED ? 'cross' : 'note';
+                document.getElementById(`mobileTool${toolType.charAt(0).toUpperCase() + toolType.slice(1)}`).classList.add('active');
+                
+                // Desktop Tool Display auch aktualisieren
+                this.updateToolDisplay();
+            }
+
+            setupTouchEvents() {
+                const gameArea = document.getElementById('gridContainer');
+                let initialDistance = 0;
+                let initialScale = 1;
+                
+                gameArea.addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 2) {
+                        e.preventDefault();
+                        const touch1 = e.touches[0];
+                        const touch2 = e.touches[1];
+                        initialDistance = Math.hypot(
+                            touch2.clientX - touch1.clientX,
+                            touch2.clientY - touch1.clientY
+                        );
+                        initialScale = this.zoomLevel;
+                    }
+                }, { passive: false });
+                
+                gameArea.addEventListener('touchmove', (e) => {
+                    if (e.touches.length === 2) {
+                        e.preventDefault();
+                        const touch1 = e.touches[0];
+                        const touch2 = e.touches[1];
+                        const currentDistance = Math.hypot(
+                            touch2.clientX - touch1.clientX,
+                            touch2.clientY - touch1.clientY
+                        );
+                        
+                        const scale = (currentDistance / initialDistance) * initialScale;
+                        this.zoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, scale));
+                        this.applyTransform();
+                        this.showZoomInfo();
+                    }
+                }, { passive: false });
+                
+                // Touch End Event hinzufügen
+                gameArea.addEventListener('touchend', (e) => {
+                    if (e.touches.length < 2) {
+                        // Reset initial values when pinch ends
+                        initialDistance = 0;
+                        initialScale = this.zoomLevel;
+                    }
+                });
+            }
+
+            setupResultDialogTouch() {
+                const resultOverlay = document.getElementById('resultOverlay');
+                
+                resultOverlay.addEventListener('click', (e) => {
+                    // Nur auf Mobile (wenn Bottom Bar sichtbar ist)
+                    if (window.innerWidth <= 768) {
+                        if (e.target === resultOverlay) {
+                            this.hideResultDialog();
+                        }
+                    }
+                });
+                
+                // Touch Event für bessere Mobile-Erfahrung
+                resultOverlay.addEventListener('touchend', (e) => {
+                    if (window.innerWidth <= 768) {
+                        if (e.target === resultOverlay) {
+                            e.preventDefault();
+                            this.hideResultDialog();
+                        }
                     }
                 });
             }
@@ -1390,6 +1793,12 @@
                 this.rows = size.rows;
                 this.cols = size.cols;
                 this.maxErrors = size.maxErrors;
+
+                // Mobile Size Text aktualisieren
+                if (document.getElementById('mobileSizeText')) {
+                    document.getElementById('mobileSizeText').textContent = sizeKey.replace(',', 'x');
+                }
+
                 this.resetGame();
             }
 
@@ -1522,20 +1931,250 @@
             }
 
             generatePuzzle() {
-                const targetFillRatio = Math.random() * 0.2 + 0.4; // 0.4 bis 0.6
-                const cellsToFill = Math.floor(this.rows * this.cols * targetFillRatio);
+                // Größenabhängige Parameter
+                const totalCells = this.rows * this.cols;
+                let targetFillRatio, minBlockSize, maxBlockSize, blockCount;
                 
-                let filledCells = 0;
-                while (filledCells < cellsToFill) {
-                    const row = Math.floor(Math.random() * this.rows);
-                    const col = Math.floor(Math.random() * this.cols);
-                    if (this.grid[row][col] === 0) {
-                        this.grid[row][col] = 1;
-                        filledCells++;
+                // Angepasste Parameter basierend auf Gridgröße
+                if (totalCells <= 25) { // 5x5
+                    targetFillRatio = 0.40; // Erhöht von 0.35
+                    minBlockSize = 2;
+                    maxBlockSize = 4;
+                    blockCount = Math.floor(totalCells * 0.2); // Erhöht von 0.15
+                } else if (totalCells <= 100) { // 10x10 und ähnliche
+                    targetFillRatio = 0.45; // Erhöht von 0.40
+                    minBlockSize = 2; // Reduziert von 3
+                    maxBlockSize = 5; // Reduziert von 6
+                    blockCount = Math.floor(totalCells * 0.15); // Erhöht von 0.12
+                } else if (totalCells <= 225) { // 15x15 und ähnliche
+                    targetFillRatio = 0.50; // Erhöht von 0.45
+                    minBlockSize = 3; // Reduziert von 4
+                    maxBlockSize = 7; // Reduziert von 8
+                    blockCount = Math.floor(totalCells * 0.12); // Erhöht von 0.10
+                } else { // 20x15 und größere
+                    targetFillRatio = 0.55; // Erhöht von 0.50
+                    minBlockSize = 4; // Reduziert von 5
+                    maxBlockSize = 8; // Reduziert von 10
+                    blockCount = Math.floor(totalCells * 0.10); // Erhöht von 0.08
+                }
+                
+                // Grid zurücksetzen
+                this.grid = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+                
+                // Zusammenhängende Blöcke generieren
+                for (let i = 0; i < blockCount; i++) {
+                    this.generateConnectedBlock(minBlockSize, maxBlockSize);
+                }
+                
+                // Falls zu wenig gefüllt, einzelne Zellen hinzufügen
+                const currentFillRatio = this.getCurrentFillRatio();
+                if (currentFillRatio < targetFillRatio * 0.7) { // Reduziert von 0.8
+                    this.addRandomCells(targetFillRatio);
+                }
+                
+                // Puzzle-Validierung und Hinweise berechnen
+                this.calculateHints();
+                
+                // Einfachere Lösbarkeits-Prüfung (maximal 3 Versuche)
+                let attempts = 0;
+                while (!this.isLikelySolvable() && attempts < 3) {
+                    console.log(`Puzzle-Versuch ${attempts + 1} nicht optimal, versuche erneut...`);
+                    
+                    // Grid zurücksetzen und neu generieren
+                    this.grid = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+                    
+                    for (let i = 0; i < blockCount; i++) {
+                        this.generateConnectedBlock(minBlockSize, maxBlockSize);
+                    }
+                    
+                    const currentFillRatio = this.getCurrentFillRatio();
+                    if (currentFillRatio < targetFillRatio * 0.7) {
+                        this.addRandomCells(targetFillRatio);
+                    }
+                    
+                    this.calculateHints();
+                    attempts++;
+                }
+                
+                // Falls nach 3 Versuchen immer noch nicht optimal, verwende das letzte Ergebnis
+                if (attempts >= 3) {
+                    console.log('Verwende aktuelles Puzzle trotz Komplexität');
+                }
+            }
+
+            generateConnectedBlock(minSize, maxSize) {
+                const blockSize = Math.floor(Math.random() * (maxSize - minSize + 1)) + minSize;
+                
+                // Zufälligen Startpunkt wählen
+                let startRow = Math.floor(Math.random() * this.rows);
+                let startCol = Math.floor(Math.random() * this.cols);
+                
+                // Versuche mehrere Startpunkte falls der erste nicht geeignet ist
+                for (let attempts = 0; attempts < 20; attempts++) { // Erhöht von 10
+                    if (this.grid[startRow][startCol] === 0) {
+                        break;
+                    }
+                    startRow = Math.floor(Math.random() * this.rows);
+                    startCol = Math.floor(Math.random() * this.cols);
+                }
+                
+                // Einfachere Block-Generierung als Fallback
+                const shapes = ['rectangle', 'line'];
+                const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                
+                switch (shape) {
+                    case 'rectangle':
+                        this.generateRectangularBlock(startRow, startCol, blockSize);
+                        break;
+                    case 'line':
+                        this.generateLineBlock(startRow, startCol, blockSize);
+                        break;
+                    default:
+                        // Fallback: Einfache rechteckige Form
+                        this.generateRectangularBlock(startRow, startCol, blockSize);
+                        break;
+                }
+            }
+
+            generateRectangularBlock(startRow, startCol, targetSize) {
+                // Rechteckige Blöcke für bessere Lösbarkeit
+                const maxWidth = Math.min(this.cols - startCol, Math.ceil(Math.sqrt(targetSize * 1.5)));
+                const maxHeight = Math.min(this.rows - startRow, Math.ceil(targetSize / maxWidth));
+                
+                const width = Math.max(1, Math.min(maxWidth, Math.floor(Math.random() * 4) + 2));
+                const height = Math.max(1, Math.min(maxHeight, Math.ceil(targetSize / width)));
+                
+                for (let r = startRow; r < Math.min(startRow + height, this.rows); r++) {
+                    for (let c = startCol; c < Math.min(startCol + width, this.cols); c++) {
+                        if (this.grid[r][c] === 0) {
+                            this.grid[r][c] = 1;
+                        }
+                    }
+                }
+            }
+
+            generateLineBlock(startRow, startCol, targetSize) {
+                // Horizontale oder vertikale Linien
+                const isHorizontal = Math.random() < 0.5;
+                
+                if (isHorizontal) {
+                    const maxLength = Math.min(this.cols - startCol, targetSize);
+                    for (let i = 0; i < maxLength; i++) {
+                        if (startCol + i < this.cols && this.grid[startRow][startCol + i] === 0) {
+                            this.grid[startRow][startCol + i] = 1;
+                        }
+                    }
+                } else {
+                    const maxLength = Math.min(this.rows - startRow, targetSize);
+                    for (let i = 0; i < maxLength; i++) {
+                        if (startRow + i < this.rows && this.grid[startRow + i][startCol] === 0) {
+                            this.grid[startRow + i][startCol] = 1;
+                        }
+                    }
+                }
+            }
+
+            generateLShapeBlock(startRow, startCol, targetSize) {
+                // L-förmige Blöcke für interessante Muster
+                const armLength = Math.floor(targetSize / 2);
+                
+                // Horizontaler Arm
+                const hLength = Math.min(this.cols - startCol, armLength);
+                for (let i = 0; i < hLength; i++) {
+                    if (startCol + i < this.cols && this.grid[startRow][startCol + i] === 0) {
+                        this.grid[startRow][startCol + i] = 1;
                     }
                 }
                 
-                this.calculateHints();
+                // Vertikaler Arm
+                const vLength = Math.min(this.rows - startRow, armLength);
+                for (let i = 1; i < vLength; i++) {
+                    if (startRow + i < this.rows && this.grid[startRow + i][startCol] === 0) {
+                        this.grid[startRow + i][startCol] = 1;
+                    }
+                }
+            }
+
+            addRandomCells(targetFillRatio) {
+                const targetCells = Math.floor(this.rows * this.cols * targetFillRatio);
+                const currentCells = this.getCurrentFilledCells();
+                const cellsToAdd = Math.max(0, targetCells - currentCells);
+                
+                let added = 0;
+                let attempts = 0;
+                
+                while (added < cellsToAdd && attempts < cellsToAdd * 3) {
+                    const row = Math.floor(Math.random() * this.rows);
+                    const col = Math.floor(Math.random() * this.cols);
+                    
+                    if (this.grid[row][col] === 0) {
+                        this.grid[row][col] = 1;
+                        added++;
+                    }
+                    attempts++;
+                }
+            }
+
+            getCurrentFillRatio() {
+                return this.getCurrentFilledCells() / (this.rows * this.cols);
+            }
+
+            getCurrentFilledCells() {
+                let count = 0;
+                for (let row = 0; row < this.rows; row++) {
+                    for (let col = 0; col < this.cols; col++) {
+                        if (this.grid[row][col] === 1) {
+                            count++;
+                        }
+                    }
+                }
+                return count;
+            }
+
+            isLikelySolvable() {
+                // Vereinfachte Lösbarkeits-Prüfung
+                
+                // 1. Prüfe grundlegende Hint-Validität
+                for (let row = 0; row < this.rows; row++) {
+                    const totalHintSum = this.rowHints[row].reduce((sum, hint) => sum + hint, 0);
+                    const minSpaces = Math.max(0, this.rowHints[row].length - 1);
+                    if (totalHintSum + minSpaces > this.cols) {
+                        return false; // Hinweise passen nicht in die Zeile
+                    }
+                }
+                
+                for (let col = 0; col < this.cols; col++) {
+                    const totalHintSum = this.colHints[col].reduce((sum, hint) => sum + hint, 0);
+                    const minSpaces = Math.max(0, this.colHints[col].length - 1);
+                    if (totalHintSum + minSpaces > this.rows) {
+                        return false; // Hinweise passen nicht in die Spalte
+                    }
+                }
+                
+                // 2. Prüfe auf zu viele komplexe Muster (lockerer als vorher)
+                const complexity = this.calculatePatternComplexity();
+                const maxComplexity = Math.max(20, (this.rows + this.cols) * 1.5); // Lockerer Grenzwert
+                
+                return complexity <= maxComplexity;
+            }
+
+            calculatePatternComplexity() {
+                let complexity = 0;
+                
+                // Zähle nur Blöcke mit mehr als 1 Hint (leere Zeilen/Spalten ignorieren)
+                for (let row = 0; row < this.rows; row++) {
+                    if (this.rowHints[row].length > 1 || this.rowHints[row][0] > 0) {
+                        complexity += this.rowHints[row].length;
+                    }
+                }
+                
+                for (let col = 0; col < this.cols; col++) {
+                    if (this.colHints[col].length > 1 || this.colHints[col][0] > 0) {
+                        complexity += this.colHints[col].length;
+                    }
+                }
+                
+                return complexity;
             }
 
             loadPredefinedImage() {
@@ -1604,10 +2243,18 @@
                 const gameGrid = document.getElementById('gameGrid');
                 const rowHintsContainer = document.getElementById('rowHints');
                 const colHintsContainer = document.getElementById('colHints');
+
+                // Mobile-spezifische Zellgröße ermitteln
+                const isMobile = window.innerWidth <= 768;
+                const cellSize = isMobile ? 25 : 30; // Pixel-Werte als Zahlen
+                const cellGap = isMobile ? 0.5 : 0; // Gap zwischen Zellen
+                const gridPadding = isMobile ? 5 : 10; // Grid Padding
                 
-                // Grid-Template setzen
-                gameGrid.style.gridTemplateColumns = `repeat(${this.cols}, 30px)`;
-                gameGrid.style.gridTemplateRows = `repeat(${this.rows}, 30px)`;
+                // Grid-Template setzen mit korrekter Größe
+                gameGrid.style.gridTemplateColumns = `repeat(${this.cols}, ${cellSize}px)`;
+                gameGrid.style.gridTemplateRows = `repeat(${this.rows}, ${cellSize}px)`;
+                gameGrid.style.gap = `${cellGap}px`;
+                gameGrid.style.padding = `${gridPadding}px`;
                 
                 // Zellen erstellen
                 gameGrid.innerHTML = '';
@@ -1628,26 +2275,52 @@
                     }
                 }
                 
-                // Zeilen-Hinweise
+                // Zeilen-Hinweise mit exakter Größenanpassung
                 rowHintsContainer.innerHTML = '';
+                const totalRowHeight = (this.rows * cellSize) + ((this.rows - 1) * cellGap);
+                rowHintsContainer.style.height = `${totalRowHeight}px`;
+                rowHintsContainer.style.top = `${gridPadding}px`;
+                rowHintsContainer.style.marginRight = isMobile ? '3px' : '10px';
                 
                 for (let row = 0; row < this.rows; row++) {
                     const hintDiv = document.createElement('div');
                     hintDiv.className = 'hint';
                     hintDiv.textContent = this.rowHints[row].join(' ');
                     hintDiv.dataset.row = row;
+                    
+                    // Exakte Größenanpassung für Mobile
+                    hintDiv.style.height = `${cellSize}px`;
+                    hintDiv.style.minWidth = isMobile ? '25px' : '40px';
+                    hintDiv.style.maxWidth = isMobile ? '80px' : '120px';
+                    hintDiv.style.fontSize = isMobile ? '8px' : '10px';
+                    hintDiv.style.padding = isMobile ? '1px 3px' : '4px 6px';
+                    hintDiv.style.margin = isMobile ? '0.25px' : '1px';
+                    hintDiv.style.lineHeight = isMobile ? '1.0' : '1.1';
+                    
                     rowHintsContainer.appendChild(hintDiv);
                 }
                 
-                // Spalten-Hinweise
+                // Spalten-Hinweise mit exakter Größenanpassung
                 colHintsContainer.innerHTML = '';
+                const totalColWidth = (this.cols * cellSize) + ((this.cols - 1) * cellGap);
+                colHintsContainer.style.width = `${totalColWidth}px`;
+                colHintsContainer.style.left = `${gridPadding}px`;
+                colHintsContainer.style.marginBottom = isMobile ? '3px' : '10px';
                 
                 for (let col = 0; col < this.cols; col++) {
                     const hintDiv = document.createElement('div');
                     hintDiv.className = 'hint';
-                    // Für Spalten-Hinweise: Zahlen untereinander mit Zeilenumbrüchen
                     hintDiv.innerHTML = this.colHints[col].join('<br>');
                     hintDiv.dataset.col = col;
+                    
+                    // Exakte Größenanpassung für Mobile
+                    hintDiv.style.width = `${cellSize}px`;
+                    hintDiv.style.minHeight = isMobile ? '25px' : '40px';
+                    hintDiv.style.fontSize = isMobile ? '8px' : '11px';
+                    hintDiv.style.padding = isMobile ? '1px' : '4px 2px';
+                    hintDiv.style.margin = isMobile ? '0.25px' : '1px';
+                    hintDiv.style.lineHeight = isMobile ? '1.0' : '1.1';
+                    
                     colHintsContainer.appendChild(hintDiv);
                 }
             }
@@ -2162,6 +2835,14 @@
                     `${this.localization.getString('points')}: ${this.points}`;
                 document.getElementById('comboDisplay').textContent = 
                     `${this.localization.getString('combo')}: x${this.comboCounter}`;
+
+                // Mobile UI Updates
+                if (document.getElementById('mobilePoints')) {
+                    document.getElementById('mobilePoints').textContent = `${this.points} ${this.localization.getString('points')}`;
+                }
+                if (document.getElementById('mobileTimer')) {
+                    document.getElementById('mobileTimer').textContent = document.getElementById('timerDisplay').textContent;
+                }
             }
 
             showResultDialog() {
@@ -2265,6 +2946,9 @@
                     highscoreMenu.style.display = 'none';
                 });
                 
+                // Event-Listener für Menü-Items
+                this.updateHighscoreMenuTexts();
+                
                 // Highscore löschen
                 document.getElementById('clearHighscores').addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -2288,6 +2972,12 @@
                     this.importHighscores();
                     highscoreMenu.style.display = 'none';
                 });
+            }
+
+            updateHighscoreMenuTexts() {
+                document.getElementById('clearHighscores').textContent = this.localization.getString('highscoreMenuClear');
+                document.getElementById('exportHighscores').textContent = this.localization.getString('highscoreMenuExport');
+                document.getElementById('importHighscores').textContent = this.localization.getString('highscoreMenuImport');
             }
 
             exportHighscores() {
@@ -2373,6 +3063,9 @@
                 
                 // Dropdown Selected Text basierend auf aktueller Größe aktualisieren
                 this.updateDropdownSelectedText();
+
+                // Highscore-Menü lokalisieren
+                this.updateHighscoreMenuTexts();
                 
                 // Timer Label
                 document.querySelector('.timer-section div:first-child strong').textContent = this.localization.getString('time') + ':';
@@ -2551,8 +3244,46 @@
             }
         });
 
-        // Auch für das Game-Grid Container
-        document.getElementById('gameGrid').addEventListener('mouseleave', (e) => {
+        document.addEventListener('DOMContentLoaded', () => {
+            // Spiel initialisieren
+            window.game = new NonogrammGame();
+            
+            // Debug-Funktionen für Konsole verfügbar machen
+            window.debugHighscores = () => window.game.highScoreManager.debugShowAllScores();
+            window.clearHighscores = () => {
+                window.game.highScoreManager.clearAllScores();
+                window.game.updateHighScoreDisplay();
+            };
+            
+            // Zusätzliche Event-Listener nach der Initialisierung
+            const gameGrid = document.getElementById('gameGrid');
+            if (gameGrid) {
+                gameGrid.addEventListener('mouseleave', (e) => {
+                    if (window.game) {
+                        window.game.isDragging = false;
+                        window.game.lastCell = null;
+                        window.game.dragValue = null;
+                    }
+                });
+            }
+            
+            // Mausrad-Zoom Support (optional)
+            if (gameGrid) {
+                gameGrid.addEventListener('wheel', (e) => {
+                    if (e.ctrlKey || e.metaKey) { // Nur mit Ctrl/Cmd gedrückt
+                        e.preventDefault();
+                        if (e.deltaY < 0) {
+                            window.game.zoomIn();
+                        } else {
+                            window.game.zoomOut();
+                        }
+                    }
+                });
+            }
+        });
+
+        // Diese Event-Listener bleiben außerhalb, da sie auf document hören:
+        document.addEventListener('mouseup', (e) => {
             if (window.game) {
                 window.game.isDragging = false;
                 window.game.lastCell = null;
@@ -2560,21 +3291,55 @@
             }
         });
 
-        // Spiel initialisieren
-        window.game = new NonogrammGame();
+        document.addEventListener('mouseleave', (e) => {
+            if (window.game) {
+                window.game.isDragging = false;
+                window.game.lastCell = null;
+                window.game.dragValue = null;
+            }
+        });
 
-        // Debug-Funktionen für Konsole verfügbar machen
-        window.debugHighscores = () => window.game.highScoreManager.debugShowAllScores();
-        window.clearHighscores = () => {
-            window.game.highScoreManager.clearAllScores();
-            window.game.updateHighScoreDisplay();
-        };
-
-        // Sofortiger Test ob Highscores angezeigt werden
-        setTimeout(() => {
-            console.log('Teste Highscore-Anzeige...');
-            window.testHighscore();
-        }, 1000);
     </script>
+
+
+    <!-- Mobile Bottom Bar -->
+    <div class="mobile-bottom-bar">
+        <div class="mobile-tools">
+            <div class="mobile-tool-item active" id="mobileToolPen" data-tool="pen">
+                <div style="width: 20px; height: 20px; background-color: #323246; border-radius: 2px;"></div>
+            </div>
+            <div class="mobile-tool-item" id="mobileToolCross" data-tool="cross">
+                <div style="position: relative; width: 20px; height: 20px;">
+                    <div style="position: absolute; width: 16px; height: 2px; background: #dc3232; transform: rotate(45deg); top: 9px; left: 2px;"></div>
+                    <div style="position: absolute; width: 16px; height: 2px; background: #dc3232; transform: rotate(-45deg); top: 9px; left: 2px;"></div>
+                </div>
+            </div>
+            <div class="mobile-tool-item" id="mobileToolNote" data-tool="note">
+                <div style="width: 8px; height: 8px; background: #8080c8; border-radius: 50%;"></div>
+            </div>
+        </div>
+        
+        <div class="mobile-info">
+            <div id="mobilePoints">0 Punkte</div>
+            <div id="mobileTimer">00:00</div>
+        </div>
+        
+        <div class="mobile-size-dropdown" id="mobileSizeDropdown">
+            <span id="mobileSizeText">10x10</span>
+            <div class="mobile-size-options" id="mobileSizeOptions">
+                <div class="mobile-size-option" data-size="5,5">5x5</div>
+                <div class="mobile-size-option" data-size="10,10">10x10</div>
+                <div class="mobile-size-option" data-size="15,15">15x15</div>
+                <div class="mobile-size-option" data-size="5,10">5x10</div>
+                <div class="mobile-size-option" data-size="10,15">10x15</div>
+                <div class="mobile-size-option" data-size="10,5">10x5</div>
+                <div class="mobile-size-option" data-size="15,10">15x10</div>
+                <div class="mobile-size-option" data-size="20,15">20x15</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="result-overlay hidden" id="resultOverlay">
+
 </body>
 </html>
