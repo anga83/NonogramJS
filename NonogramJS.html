@@ -1,0 +1,1909 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nonogramm Web Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5fa;
+            overflow: hidden;
+        }
+
+        .game-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 390px;
+            background-color: white;
+            border-right: 2px solid #c8c8c8;
+            padding: 20px;
+            overflow-y: auto;
+            position: relative; /* Diese Zeile hinzufügen */
+        }
+
+        .title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .dropdown {
+            position: relative;
+            width: 250px;
+            margin-bottom: 10px;
+        }
+
+        .dropdown-selected {
+            padding: 8px 12px;
+            border: 1px solid #b4b4be;
+            background-color: #f0f0f5;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dropdown-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid #b4b4be;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .dropdown-option:hover {
+            background-color: #e1e1eb;
+        }
+
+        .game-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            font-size: 12px;
+        }
+
+        .instructions {
+            font-size: 11px;
+            line-height: 1.4;
+            margin-bottom: 20px;
+        }
+
+        .tool-section {
+            margin-bottom: 20px;
+        }
+
+        .tool-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .tool-icon {
+            width: 40px;
+            height: 40px;
+            border: 1px solid black;
+            background-color: #e6e6e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .color-section {
+            margin-bottom: 20px;
+        }
+
+        .color-palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .color-button {
+            width: 30px;
+            height: 30px;
+            border: 1px solid black;
+            cursor: pointer;
+        }
+
+        .color-button.selected {
+            border-width: 3px;
+        }
+
+        .score-section {
+            margin-top: auto;
+            padding: 10px;
+            background-color: #dae8ff;
+            border-radius: 5px;
+        }
+
+        .score-section h3 {
+            font-size: 14px;
+            font-weight: bold;
+            color: #0050dc;
+        }
+
+        .timer-section {
+            margin-left: 10px;
+            padding: 10px;
+            background-color: #e6e6e6;
+            border-radius: 5px;
+        }
+
+        .game-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .game-grid-container {
+            position: relative;
+        }
+
+        .game-grid {
+            display: grid;
+            gap: 0;
+            background-color: #fafaff;
+            border: 2px solid #64648c;
+            padding: 10px;
+        }
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #c8c8c8;
+            cursor: pointer;
+            position: relative;
+            background-color: white;
+        }
+
+        .cell.highlight {
+            background-color: #dcf0ff;
+        }
+
+        .cell.filled {
+            background-color: #323246;
+        }
+
+        .cell.crossed::before,
+        .cell.crossed::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 2px;
+            background-color: #dc3232;
+            transform-origin: center;
+        }
+
+        .cell.crossed::before {
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .cell.crossed::after {
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+
+        .cell.auto-crossed::before,
+        .cell.auto-crossed::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 2px;
+            background-color: black;
+            transform-origin: center;
+        }
+
+        .cell.auto-crossed::before {
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .cell.auto-crossed::after {
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+
+        .cell.note::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            background-color: #8080c8;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .row-hints {
+            position: absolute;
+            right: 100%;
+            top: 10px; /* Padding des Game-Grids berücksichtigen */
+            height: calc(100% - 20px); /* Padding oben und unten abziehen */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            margin-right: 10px;
+        }
+
+        .col-hints {
+            position: absolute;
+            bottom: 100%;
+            left: 10px; /* Padding des Game-Grids berücksichtigen */
+            width: calc(100% - 20px); /* Padding links und rechts abziehen */
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e6e6e6;
+            border-radius: 4px;
+            margin: 1px;
+            padding: 4px 6px;
+            font-size: 11px;
+            /* font-weight: bold; */
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .hint.completed {
+            background-color: #96e696;
+        }
+
+        /* Spezielle Styling für Zeilen-Hinweise */
+        .row-hints .hint {
+            height: 30px;
+            min-width: 40px;
+            max-width: 120px; /* Maximale Breite begrenzen */
+            text-align: right;
+            justify-content: flex-end;
+            padding-right: 8px;
+            white-space: nowrap; /* Verhindert Zeilenumbrüche */
+            overflow-x: auto; /* Horizontales Scrollen bei sehr langen Hinweisen */
+            overflow-y: hidden; /* Verhindert vertikales Scrollen */
+            font-size: 10px; /* Etwas kleinere Schrift für mehr Platz */
+        }
+
+        /* Scrollbar für Zeilen-Hinweise verstecken */
+        .row-hints .hint::-webkit-scrollbar {
+            height: 2px;
+        }
+
+        .row-hints .hint::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 1px;
+        }
+
+        .row-hints .hint::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+
+        /* Spezielle Styling für Spalten-Hinweise */
+        .col-hints .hint {
+            width: 30px;
+            min-height: 40px;
+            flex-direction: column;
+            writing-mode: horizontal-tb; /* Normal lesbare Schrift */
+            text-orientation: mixed;
+            line-height: 1.1;
+            padding: 4px 2px;
+        }
+
+        .result-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .result-dialog {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            border: 4px solid;
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .result-dialog.won {
+            border-color: #28b428;
+        }
+
+        .result-dialog.lost {
+            border-color: #dc3232;
+        }
+
+        .result-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .result-title.won {
+            color: #28b428;
+        }
+
+        .result-title.lost {
+            color: #dc3232;
+        }
+
+        .score-details {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .score-line {
+            margin-bottom: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 300px;
+            }
+            
+            .cell {
+                width: 20px;
+                height: 20px;
+            }
+
+            .row-hints .hint {
+                height: 20px;
+                min-width: 30px;
+                font-size: 9px;
+            }
+
+            .col-hints .hint {
+                width: 20px;
+                min-height: 30px;
+                font-size: 9px;
+            }
+        }
+
+        .language-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+
+        .language-button {
+            padding: 5px 10px;
+            border: 1px solid #b4b4be;
+            background-color: #f0f0f5;
+            cursor: pointer;
+            font-size: 12px;
+            border-radius: 3px;
+        }
+
+        .language-button.active {
+            background-color: #0050dc;
+            color: white;
+        }
+
+        .language-button:hover {
+            background-color: #e1e1eb;
+        }
+
+        .language-button.active:hover {
+            background-color: #0040bc;
+        }
+
+        .highscore-section {
+            margin-bottom: 15px;
+            font-size: 11px;
+        }
+
+        .highscore-list {
+            max-height: 100px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            padding: 5px;
+            background-color: #f9f9f9;
+            border-radius: 3px;
+        }
+
+        .highscore-entry {
+            padding: 2px 0;
+            font-size: 10px;
+        }
+
+        .version-info {
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            font-size: 10px;
+            color: #888;
+            opacity: 0.7;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="sidebar">
+            <div class="title">Nonogramm</div>
+           
+            <div class="language-buttons">
+                <button class="language-button" id="langDe">DE</button>
+                <button class="language-button" id="langEn">EN</button>
+            </div>
+
+            <div class="control-section">
+                <div class="control-label">Spielfeldgröße:</div>
+                <div class="dropdown" id="sizeDropdown">
+                    <div class="dropdown-selected" id="dropdownSelected">
+                        <span>Mittel (10x10)</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="dropdown-options" id="dropdownOptions">
+                        <div class="dropdown-option" data-size="5,5">
+                            <span>Einfach (5x5)</span>
+                            <span>[1]</span>
+                        </div>
+                        <div class="dropdown-option" data-size="10,10">
+                            <span>Mittel (10x10)</span>
+                            <span>[2]</span>
+                        </div>
+                        <div class="dropdown-option" data-size="15,15">
+                            <span>Schwer (15x15)</span>
+                            <span>[3]</span>
+                        </div>
+                        <div class="dropdown-option" data-size="5,10">
+                            <span>Rechteckig 1 (5x10)</span>
+                            <span>[4]</span>
+                        </div>
+                        <div class="dropdown-option" data-size="10,15">
+                            <span>Rechteckig 2 (10x15)</span>
+                            <span>[5]</span>
+                        </div>
+                        <div class="dropdown-option" data-size="10,5">
+                            <span>Rechteckig 3 (10x5)</span>
+                            <span>[6]</span>
+                        </div>
+                        <div class="dropdown-option" data-size="15,10">
+                            <span>Rechteckig 4 (15x10)</span>
+                            <span>[7]</span>
+                        </div>
+                        <div class="dropdown-option" data-size="20,15">
+                            <span>Rechteckig 5 (20x15)</span>
+                            <span>[8]</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="game-stats">
+                <div class="stat-item" id="errorDisplay">Fehler: 0/3</div>
+                <div class="stat-item" id="autoCrossStatus">Auto-Durchstreichen: Ein</div>
+            </div>
+
+            <div class="instructions">
+                <strong>Steuerung:</strong><br>
+                T: Zwischen Stift/Durchstreichen wechseln<br>
+                H/O: Notiz-Werkzeug aktivieren/deaktivieren<br>
+                A: Auto-Durchstreichen ein/aus<br>
+                C: Raster auf Fehler prüfen<br>
+                Linksklick/Ziehen: Zelle markieren<br>
+                Rechtsklick: Alternative Markierung<br>
+                R: Puzzle zurücksetzen<br>
+                N: Neues Puzzle<br>
+                E: Neues Bildpuzzle
+            </div>
+
+            <div class="tool-section">
+                <div class="control-label">Aktuelles Werkzeug:</div>
+                <div class="tool-display">
+                    <div class="tool-icon" id="toolIcon"></div>
+                    <span id="toolName">Stift</span>
+                </div>
+            </div>
+
+            <div class="color-section">
+                <div class="control-label">Farbwähler:</div>
+                <div class="color-palette" id="colorPalette"></div>
+                <div id="currentColorText">Aktuelle Farbe: Schwarz</div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: auto;">
+                <div class="score-section">
+                    <h3 id="pointsDisplay">Punkte: 0</h3>
+                    <div id="comboDisplay">Combo: x0</div>
+                </div>
+                <div class="timer-section">
+                    <div><strong>Zeit:</strong></div>
+                    <div id="timerDisplay">00:00</div>
+                </div>
+            </div>
+
+            <div class="version-info">v2.1</div>
+            
+        </div>
+
+        <div class="game-area">
+            <div class="game-grid-container" id="gridContainer">
+                <div class="row-hints" id="rowHints"></div>
+                <div class="col-hints" id="colHints"></div>
+                <div class="game-grid" id="gameGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="result-overlay hidden" id="resultOverlay">
+        <div class="result-dialog" id="resultDialog">
+            <div class="result-title" id="resultTitle"></div>
+            <div class="score-details" id="scoreDetails"></div>
+            <div id="resultSubtext"></div>
+        </div>
+    </div>
+
+    <script>
+
+        // Lokalisierung und Cookie-Management
+        class LocalizationManager {
+            constructor() {
+                this.currentLanguage = this.detectLanguage();
+                this.translations = {
+                    de: {
+                        title: "Nonogramm",
+                        gridSize: "Spielfeldgröße:",
+                        easy: "Einfach",
+                        medium: "Mittel", 
+                        hard: "Schwer",
+                        rectangular: "Rechteckig",
+                        errors: "Fehler",
+                        autoCrossOn: "Auto-Durchstreichen: Ein",
+                        autoCrossOff: "Auto-Durchstreichen: Aus",
+                        controls: "Steuerung:",
+                        currentTool: "Aktuelles Werkzeug:",
+                        colorPicker: "Farbwähler:",
+                        currentColor: "Aktuelle Farbe",
+                        points: "Punkte",
+                        combo: "Combo",
+                        time: "Zeit",
+                        toolPen: "Stift",
+                        toolCross: "Durchstreichen", 
+                        toolNote: "Notiz",
+                        puzzleSolved: "Puzzle gelöst!",
+                        tooManyErrors: "Zu viele Fehler!",
+                        newPuzzleHint: "Drücke N für ein neues Puzzle",
+                        restartHint: "Drücke R zum neu starten oder N für ein neues Puzzle",
+                        basePoints: "Basispunkte",
+                        efficiencyBonus: "Effizienz-Bonus",
+                        timeBonus: "Zeit-Bonus",
+                        errorFreeBonus: "Fehlerfreier Bonus",
+                        totalScore: "Gesamtpunktzahl",
+                        newHighscore: "🎉 Neuer Rekord!",
+                        highscores: "Bestenliste",
+                        noHighscores: "Noch keine Rekorde",
+                        colors: {
+                            "Schwarz": "Schwarz",
+                            "Rot": "Rot", 
+                            "Blau": "Blau",
+                            "Grün": "Grün",
+                            "Lila": "Lila",
+                            "Pink": "Pink",
+                            "Orange": "Orange",
+                            "Hellblau": "Hellblau"
+                        }
+                    },
+                    en: {
+                        title: "Nonogram",
+                        gridSize: "Grid Size:",
+                        easy: "Easy",
+                        medium: "Medium",
+                        hard: "Hard", 
+                        rectangular: "Rectangular",
+                        errors: "Errors",
+                        autoCrossOn: "Auto-Cross: On",
+                        autoCrossOff: "Auto-Cross: Off",
+                        controls: "Controls:",
+                        currentTool: "Current Tool:",
+                        colorPicker: "Color Picker:",
+                        currentColor: "Current Color",
+                        points: "Points",
+                        combo: "Combo",
+                        time: "Time",
+                        toolPen: "Pen",
+                        toolCross: "Cross",
+                        toolNote: "Note",
+                        puzzleSolved: "Puzzle Solved!",
+                        tooManyErrors: "Too Many Errors!",
+                        newPuzzleHint: "Press N for a new puzzle",
+                        restartHint: "Press R to restart or N for a new puzzle",
+                        basePoints: "Base Points",
+                        efficiencyBonus: "Efficiency Bonus",
+                        timeBonus: "Time Bonus", 
+                        errorFreeBonus: "Error-Free Bonus",
+                        totalScore: "Total Score",
+                        newHighscore: "🎉 New Record!",
+                        highscores: "High Scores",
+                        noHighscores: "No records yet",
+                        colors: {
+                            "Schwarz": "Black",
+                            "Rot": "Red",
+                            "Blau": "Blue", 
+                            "Grün": "Green",
+                            "Lila": "Purple",
+                            "Pink": "Pink",
+                            "Orange": "Orange",
+                            "Hellblau": "Light Blue"
+                        }
+                    }
+                };
+            }
+
+            detectLanguage() {
+                // URL-Parameter prüfen
+                const urlParams = new URLSearchParams(window.location.search);
+                const langParam = urlParams.get('lang');
+                if (langParam && (langParam === 'de' || langParam === 'en')) {
+                    this.setCookie('nonogram_language', langParam, 365);
+                    return langParam;
+                }
+                
+                // Cookie prüfen
+                const cookieLang = this.getCookie('nonogram_language');
+                if (cookieLang) {
+                    return cookieLang;
+                }
+                
+                // Browser-Sprache
+                const browserLang = navigator.language || navigator.userLanguage;
+                return browserLang.startsWith('de') ? 'de' : 'en';
+            }
+
+            getString(key) {
+                return this.translations[this.currentLanguage][key] || key;
+            }
+
+            getColorName(colorKey) {
+                return this.translations[this.currentLanguage].colors[colorKey] || colorKey;
+            }
+
+            setLanguage(lang) {
+                if (lang === 'de' || lang === 'en') {
+                    this.currentLanguage = lang;
+                    this.setCookie('nonogram_language', lang, 365);
+                    // URL aktualisieren
+                    const url = new URL(window.location);
+                    url.searchParams.set('lang', lang);
+                    window.history.replaceState({}, '', url);
+                }
+            }
+
+            getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            setCookie(name, value, days) {
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+                document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+            }
+        }
+
+        class HighScoreManager {
+            constructor() {
+                this.cookieName = 'nonogram_highscores';
+                this.maxScores = 5;
+            }
+
+            getHighScores(gridSize, isPredefinedImage = false) {
+                const allScores = this.loadFromCookie();
+                const key = `${gridSize}_${isPredefinedImage ? 'predefined' : 'random'}`;
+                return allScores[key] || [];
+            }
+
+            addScore(gridSize, score, time, errors, isPredefinedImage = false) {
+                const allScores = this.loadFromCookie();
+                const key = `${gridSize}_${isPredefinedImage ? 'predefined' : 'random'}`;
+                
+                if (!allScores[key]) {
+                    allScores[key] = [];
+                }
+
+                const newScore = {
+                    score: score,
+                    time: time,
+                    errors: errors,
+                    date: new Date().toISOString()
+                };
+
+                allScores[key].push(newScore);
+                allScores[key].sort((a, b) => b.score - a.score);
+                allScores[key] = allScores[key].slice(0, this.maxScores);
+
+                this.saveToCookie(allScores);
+                
+                // Prüfen ob es ein neuer Rekord ist (Top 3)
+                const position = allScores[key].findIndex(s => 
+                    s.score === score && s.time === time && s.errors === errors
+                );
+                return position < 3;
+            }
+
+            loadFromCookie() {
+                const cookie = this.getCookie(this.cookieName);
+                return cookie ? JSON.parse(cookie) : {};
+            }
+
+            saveToCookie(scores) {
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 Jahr
+                document.cookie = `${this.cookieName}=${JSON.stringify(scores)};expires=${expires.toUTCString()};path=/`;
+            }
+
+            getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            displayHighScores(gridSize, isPredefinedImage = false) {
+                const scores = this.getHighScores(gridSize, isPredefinedImage);
+                let container = document.getElementById('highscoreContainer');
+                
+                if (!container) {
+                    // Container erstellen falls nicht vorhanden
+                    container = document.createElement('div');
+                    container.id = 'highscoreContainer';
+                    container.className = 'highscore-section';
+                    document.querySelector('.sidebar').appendChild(container);
+                }
+
+                const title = window.game.localization.getString('highscores');
+                const noScoresText = window.game.localization.getString('noHighscores');
+                
+                if (scores.length === 0) {
+                    container.innerHTML = `
+                        <div class="control-label">${title}:</div>
+                        <div class="highscore-list">${noScoresText}</div>
+                    `;
+                    return;
+                }
+
+                let html = `<div class="control-label">${title}:</div><div class="highscore-list">`;
+                scores.forEach((score, index) => {
+                    const timeStr = this.formatTime(score.time);
+                    html += `
+                        <div class="highscore-entry">
+                            ${index + 1}. ${score.score}pts (${timeStr}, ${score.errors} errors)
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                container.innerHTML = html;
+            }
+
+            formatTime(milliseconds) {
+                const seconds = Math.floor(milliseconds / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+
+        class NonogrammGame {
+            constructor() {
+                // Konstanten
+                this.EMPTY = 0;
+                this.FILLED = 1;
+                this.CROSSED = 2;
+                this.AUTO_CROSSED = 3;
+                this.NOTE = 4;
+
+                // Farben
+                this.colorPalette = {
+                    "Schwarz": "#323246",
+                    "Rot": "#dc3232",
+                    "Blau": "#3232dc",
+                    "Grün": "#28b428",
+                    "Lila": "#9632dc",
+                    "Pink": "#ff69b4",
+                    "Orange": "#ffa500",
+                    "Hellblau": "#9696ff"
+                };
+
+                // Spielfeld-Größen
+                this.gridSizes = {
+                    "5,5": { rows: 5, cols: 5, maxErrors: 1 },
+                    "10,10": { rows: 10, cols: 10, maxErrors: 3 },
+                    "15,15": { rows: 15, cols: 15, maxErrors: 5 },
+                    "5,10": { rows: 5, cols: 10, maxErrors: 2 },
+                    "10,15": { rows: 10, cols: 15, maxErrors: 4 },
+                    "10,5": { rows: 10, cols: 5, maxErrors: 2 },
+                    "15,10": { rows: 15, cols: 10, maxErrors: 4 },
+                    "20,15": { rows: 20, cols: 15, maxErrors: 7 }
+                };
+
+                // Spielzustand
+                this.currentSize = "10,10";
+                this.rows = 10;
+                this.cols = 10;
+                this.maxErrors = 3;
+                this.grid = [];
+                this.playerGrid = [];
+                this.cellColors = [];
+                this.rowHints = [];
+                this.colHints = [];
+                this.completedRows = [];
+                this.completedCols = [];
+                
+                this.tool = this.FILLED;
+                this.selectedColor = "Schwarz";
+                this.autoCrossMode = true;
+                this.gameWon = false;
+                this.gameLost = false;
+                this.errors = 0;
+                this.points = 0;
+                this.comboCounter = 0;
+                this.correctlyFilledCells = new Set();
+                
+                // Timer
+                this.timerRunning = false;
+                this.startTime = 0;
+                this.elapsedTime = 0;
+                this.timerInterval = null;
+                
+                // Maus-Tracking
+                this.isDragging = false;
+                this.lastCell = null;
+                this.dragValue = null;
+                this.dragColor = null;
+
+                // Vordefinierte Bilder
+                this.predefinedImages = {
+                    "10,10": [
+                        // Baum
+                        [
+                            [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+                            [1, 1, 0, 0, 1, 1, 0, 0, 1, 1],
+                            [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 1, 0, 0]
+                        ],
+                        // Herz
+                        [
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
+                            [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                            [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                        ]
+                    ]
+                };
+                this.currentImageIndices = { "10,10": 0 };
+                this.loadedPredefinedImage = false;
+
+                // Lokalisierung und Highscores initialisieren
+                this.localization = new LocalizationManager();
+                this.highScoreManager = new HighScoreManager();
+
+                this.initializeUI();
+                this.resetGame();
+            }
+
+            initializeUI() {
+                this.setupDropdown();
+                this.setupColorPalette();
+                this.setupEventListeners();
+                this.updateToolDisplay();
+                this.setupLanguageButtons();
+                this.updateAllTexts();
+            }
+
+            setupDropdown() {
+                const dropdownSelected = document.getElementById('dropdownSelected');
+                const dropdownOptions = document.getElementById('dropdownOptions');
+                
+                dropdownSelected.addEventListener('click', () => {
+                    dropdownOptions.style.display = dropdownOptions.style.display === 'block' ? 'none' : 'block';
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!document.getElementById('sizeDropdown').contains(e.target)) {
+                        dropdownOptions.style.display = 'none';
+                    }
+                });
+
+                dropdownOptions.addEventListener('click', (e) => {
+                    const option = e.target.closest('.dropdown-option');
+                    if (option) {
+                        const size = option.dataset.size;
+                        this.changeGridSize(size);
+                        dropdownSelected.querySelector('span').textContent = option.querySelector('span').textContent;
+                        dropdownOptions.style.display = 'none';
+                    }
+                });
+            }
+
+            setupColorPalette() {
+                const palette = document.getElementById('colorPalette');
+                palette.innerHTML = '';
+                
+                Object.entries(this.colorPalette).forEach(([name, color]) => {
+                    const button = document.createElement('div');
+                    button.className = 'color-button';
+                    button.style.backgroundColor = color;
+                    button.dataset.color = name;
+                    if (name === this.selectedColor) {
+                        button.classList.add('selected');
+                    }
+                    
+                    button.addEventListener('click', () => {
+                        this.selectColor(name);
+                    });
+                    
+                    palette.appendChild(button);
+                });
+            }
+
+            setupEventListeners() {
+                document.addEventListener('keydown', this.handleKeyDown.bind(this));
+                
+                // Verhindere Kontextmenü bei Rechtsklick
+                document.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
+            handleKeyDown(event) {
+                switch(event.key) {
+                    case '1': this.changeGridSize('5,5'); break;
+                    case '2': this.changeGridSize('10,10'); break;
+                    case '3': this.changeGridSize('15,15'); break;
+                    case '4': this.changeGridSize('5,10'); break;
+                    case '5': this.changeGridSize('10,15'); break;
+                    case '6': this.changeGridSize('10,5'); break;
+                    case '7': this.changeGridSize('15,10'); break;
+                    case '8': this.changeGridSize('20,15'); break;
+                    case 'r':
+                    case 'R':
+                        this.hideResultDialog();
+                        this.resetGame();
+                        break;
+                    case 'n':
+                    case 'N':
+                        this.hideResultDialog();
+                        this.resetGame();
+                        break;
+                    case 't':
+                    case 'T':
+                        this.toggleTool();
+                        break;
+                    case 'h':
+                    case 'H':
+                    case 'o':
+                    case 'O':
+                        this.toggleNoteTool();
+                        break;
+                    case 'a':
+                    case 'A':
+                        this.toggleAutoCross();
+                        break;
+                    case 'c':
+                    case 'C':
+                        this.checkGridForErrors();
+                        break;
+                    case 'e':
+                    case 'E':
+                        this.loadPredefinedImage();
+                        break;
+                }
+            }
+
+            changeGridSize(sizeKey) {
+                this.currentSize = sizeKey;
+                const size = this.gridSizes[sizeKey];
+                this.rows = size.rows;
+                this.cols = size.cols;
+                this.maxErrors = size.maxErrors;
+                this.resetGame();
+            }
+
+            selectColor(colorName) {
+                this.selectedColor = colorName;
+                
+                // UI aktualisieren
+                document.querySelectorAll('.color-button').forEach(btn => {
+                    btn.classList.toggle('selected', btn.dataset.color === colorName);
+                });
+                
+                const colorText = this.localization.getColorName(colorName);
+                document.getElementById('currentColorText').textContent = 
+                    `${this.localization.getString('currentColor')}: ${colorText}`;
+                this.updateToolDisplay();
+            }
+
+            toggleTool() {
+                if (this.tool === this.NOTE) {
+                    this.tool = this.FILLED;
+                } else {
+                    this.tool = this.tool === this.FILLED ? this.CROSSED : this.FILLED;
+                }
+                this.updateToolDisplay();
+            }
+
+            toggleNoteTool() {
+                this.tool = this.tool === this.NOTE ? this.FILLED : this.NOTE;
+                this.updateToolDisplay();
+            }
+
+            toggleAutoCross() {
+                this.autoCrossMode = !this.autoCrossMode;
+                document.getElementById('autoCrossStatus').textContent = 
+                    this.autoCrossMode ? this.localization.getString('autoCrossOn') : this.localization.getString('autoCrossOff');
+                
+                if (this.autoCrossMode) {
+                    for (let row = 0; row < this.rows; row++) {
+                        this.checkAndAutocrossRow(row);
+                    }
+                    for (let col = 0; col < this.cols; col++) {
+                        this.checkAndAutocrossCol(col);
+                    }
+                }
+            }
+
+            updateToolDisplay() {
+                const toolIcon = document.getElementById('toolIcon');
+                const toolName = document.getElementById('toolName');
+                
+                toolIcon.innerHTML = '';
+                
+                if (this.tool === this.FILLED) {
+                    toolIcon.style.backgroundColor = this.colorPalette[this.selectedColor];
+                    toolName.textContent = this.localization.getString('toolPen');
+                } else if (this.tool === this.CROSSED) {
+                    toolIcon.style.backgroundColor = '#e6e6e6';
+                    const cross1 = document.createElement('div');
+                    const cross2 = document.createElement('div');
+                    cross1.style.cssText = 'position: absolute; width: 20px; height: 2px; background: #dc3232; transform: rotate(45deg);';
+                    cross2.style.cssText = 'position: absolute; width: 20px; height: 2px; background: #dc3232; transform: rotate(-45deg);';
+                    toolIcon.style.position = 'relative';
+                    toolIcon.appendChild(cross1);
+                    toolIcon.appendChild(cross2);
+                    toolName.textContent = this.localization.getString('toolCross');
+                } else if (this.tool === this.NOTE) {
+                    toolIcon.style.backgroundColor = '#e6e6e6';
+                    const note = document.createElement('div');
+                    note.style.cssText = 'width: 8px; height: 8px; background: #8080c8; border-radius: 50%;';
+                    toolIcon.appendChild(note);
+                    toolName.textContent = this.localization.getString('toolNote');
+                }
+            }
+
+
+            resetGame() {
+                this.grid = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+                this.playerGrid = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+                this.cellColors = Array(this.rows).fill().map(() => Array(this.cols).fill(this.colorPalette[this.selectedColor]));
+                
+                this.generatePuzzle();
+                
+                this.completedRows = Array(this.rows).fill(false);
+                this.completedCols = Array(this.cols).fill(false);
+                
+                this.gameWon = false;
+                this.gameLost = false;
+                this.errors = 0;
+                this.points = 0;
+                this.comboCounter = 0;
+                this.correctlyFilledCells.clear();
+                this.loadedPredefinedImage = false;
+                
+                this.stopTimer();
+                this.resetTimer();
+                
+                this.isDragging = false;
+                this.lastCell = null;
+                this.dragValue = null;
+                
+                this.createGrid();
+                this.updateUI();
+                this.updateHighScoreDisplay(); // Hier bleibt es
+                this.hideResultDialog();
+            }
+
+            generatePuzzle() {
+                const targetFillRatio = Math.random() * 0.2 + 0.4; // 0.4 bis 0.6
+                const cellsToFill = Math.floor(this.rows * this.cols * targetFillRatio);
+                
+                let filledCells = 0;
+                while (filledCells < cellsToFill) {
+                    const row = Math.floor(Math.random() * this.rows);
+                    const col = Math.floor(Math.random() * this.cols);
+                    if (this.grid[row][col] === 0) {
+                        this.grid[row][col] = 1;
+                        filledCells++;
+                    }
+                }
+                
+                this.calculateHints();
+            }
+
+            loadPredefinedImage() {
+                if (!this.predefinedImages[this.currentSize]) {
+                    console.log(`Keine vordefinierten Bilder für ${this.currentSize} verfügbar`);
+                    return;
+                }
+                
+                this.loadedPredefinedImage = true;
+                const images = this.predefinedImages[this.currentSize];
+                const currentIndex = this.currentImageIndices[this.currentSize] || 0;
+                
+                this.grid = images[currentIndex].map(row => [...row]);
+                this.playerGrid = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+                this.cellColors = Array(this.rows).fill().map(() => Array(this.cols).fill(this.colorPalette[this.selectedColor]));
+                
+                this.calculateHints();
+                
+                this.completedRows = Array(this.rows).fill(false);
+                this.completedCols = Array(this.cols).fill(false);
+                this.gameWon = false;
+                this.gameLost = false;
+                this.errors = 0;
+                this.points = 0;
+                this.comboCounter = 0;
+                this.correctlyFilledCells.clear();
+                
+                this.currentImageIndices[this.currentSize] = (currentIndex + 1) % images.length;
+                
+                this.createGrid();
+                this.updateUI();
+                this.updateHighScoreDisplay(); // Hier hinzufügen
+            }
+
+            calculateHints() {
+                this.rowHints = this.grid.map(row => this.calculateLineHints(row));
+                this.colHints = [];
+                for (let col = 0; col < this.cols; col++) {
+                    const colData = this.grid.map(row => row[col]);
+                    this.colHints.push(this.calculateLineHints(colData));
+                }
+            }
+
+            calculateLineHints(line) {
+                const hints = [];
+                let count = 0;
+                
+                for (const cell of line) {
+                    if (cell === 1) {
+                        count++;
+                    } else if (count > 0) {
+                        hints.push(count);
+                        count = 0;
+                    }
+                }
+                
+                if (count > 0) {
+                    hints.push(count);
+                }
+                
+                return hints.length > 0 ? hints : [0];
+            }
+
+            createGrid() {
+                const gridContainer = document.getElementById('gridContainer');
+                const gameGrid = document.getElementById('gameGrid');
+                const rowHintsContainer = document.getElementById('rowHints');
+                const colHintsContainer = document.getElementById('colHints');
+                
+                // Grid-Template setzen
+                gameGrid.style.gridTemplateColumns = `repeat(${this.cols}, 30px)`;
+                gameGrid.style.gridTemplateRows = `repeat(${this.rows}, 30px)`;
+                
+                // Zellen erstellen
+                gameGrid.innerHTML = '';
+                for (let row = 0; row < this.rows; row++) {
+                    for (let col = 0; col < this.cols; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        
+                        // Highlight-Pattern für bessere Lesbarkeit
+                        if (Math.floor(row / 5) % 2 !== Math.floor(col / 5) % 2) {
+                            cell.classList.add('highlight');
+                        }
+                        
+                        this.setupCellEvents(cell);
+                        gameGrid.appendChild(cell);
+                    }
+                }
+                
+                // Zeilen-Hinweise
+                rowHintsContainer.innerHTML = '';
+                
+                for (let row = 0; row < this.rows; row++) {
+                    const hintDiv = document.createElement('div');
+                    hintDiv.className = 'hint';
+                    hintDiv.textContent = this.rowHints[row].join(' ');
+                    hintDiv.dataset.row = row;
+                    rowHintsContainer.appendChild(hintDiv);
+                }
+                
+                // Spalten-Hinweise
+                colHintsContainer.innerHTML = '';
+                
+                for (let col = 0; col < this.cols; col++) {
+                    const hintDiv = document.createElement('div');
+                    hintDiv.className = 'hint';
+                    // Für Spalten-Hinweise: Zahlen untereinander mit Zeilenumbrüchen
+                    hintDiv.innerHTML = this.colHints[col].join('<br>');
+                    hintDiv.dataset.col = col;
+                    colHintsContainer.appendChild(hintDiv);
+                }
+            }
+
+            setupCellEvents(cell) {
+                cell.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    if (this.gameWon || this.gameLost) return;
+                    
+                    const row = parseInt(cell.dataset.row);
+                    const col = parseInt(cell.dataset.col);
+                    
+                    this.isDragging = true;
+                    this.lastCell = { row, col };
+                    
+                    if (e.button === 0) { // Linksklick
+                        this.handleCellClick(row, col, this.tool);
+                    } else if (e.button === 2) { // Rechtsklick
+                        const altTool = this.tool === this.NOTE ? this.NOTE : 
+                                    (this.tool === this.FILLED ? this.CROSSED : this.FILLED);
+                        this.handleCellClick(row, col, altTool);
+                    }
+                });
+                
+                cell.addEventListener('mouseenter', (e) => {
+                    if (!this.isDragging || this.gameWon || this.gameLost) return;
+                    
+                    const row = parseInt(cell.dataset.row);
+                    const col = parseInt(cell.dataset.col);
+                    
+                    if (this.lastCell.row !== row || this.lastCell.col !== col) {
+                        this.lastCell = { row, col };
+                        
+                        if (this.dragValue === this.FILLED && this.playerGrid[row][col] === this.FILLED) {
+                            return; // Bereits ausgefüllte Zellen beim Ziehen nicht ändern
+                        }
+                        
+                        this.markCell(row, col, this.dragValue);
+                    }
+                });
+                
+                // Mouseup Event auf jeder Zelle hinzufügen
+                cell.addEventListener('mouseup', (e) => {
+                    e.preventDefault();
+                    this.isDragging = false;
+                    this.lastCell = null;
+                    this.dragValue = null;
+                });
+                
+                // Mouseleave Event hinzufügen für zusätzliche Sicherheit
+                cell.addEventListener('mouseleave', (e) => {
+                    // Wenn die Maus die Zelle verlässt und nicht gedraggt wird, sicherheitshalber stoppen
+                    if (!this.isDragging) {
+                        this.lastCell = null;
+                        this.dragValue = null;
+                    }
+                });
+            }
+
+            handleCellClick(row, col, tool) {
+                const currentValue = this.playerGrid[row][col];
+                
+                if (tool === this.FILLED) {
+                    this.dragValue = currentValue === this.FILLED ? this.EMPTY : this.FILLED;
+                    this.dragColor = this.colorPalette[this.selectedColor];
+                } else if (tool === this.CROSSED) {
+                    this.dragValue = currentValue === this.CROSSED ? this.EMPTY : this.CROSSED;
+                } else if (tool === this.NOTE) {
+                    this.dragValue = currentValue === this.NOTE ? this.EMPTY : this.NOTE;
+                }
+                
+                this.markCell(row, col, this.dragValue);
+            }
+
+            markCell(row, col, value) {
+                // Timer starten wenn erste Zelle markiert wird
+                if (!this.timerRunning && value === this.FILLED) {
+                    this.startTimer();
+                }
+                
+                const oldValue = this.playerGrid[row][col];
+                const cellPosition = `${row},${col}`;
+                
+                // Schutz vor Änderungen in vollständig gelösten Zeilen/Spalten
+                if (this.autoCrossMode && value !== this.NOTE) {
+                    if (this.completedRows[row] || this.completedCols[col]) {
+                        return;
+                    }
+                }
+                
+                // Schutz vor ungültigen Änderungen
+                if ((value === this.CROSSED && oldValue === this.FILLED) || 
+                    oldValue === this.AUTO_CROSSED ||
+                    (value === this.FILLED && (oldValue === this.CROSSED || oldValue === this.AUTO_CROSSED))) {
+                    if (value !== this.NOTE) return;
+                }
+                
+                // Toggle-Verhalten
+                if (oldValue === value) {
+                    this.playerGrid[row][col] = this.EMPTY;
+                } else {
+                    if (value === this.FILLED && oldValue !== this.FILLED) {
+                        this.cellColors[row][col] = this.colorPalette[this.selectedColor];
+                        
+                        // Punkte-System
+                        if (this.grid[row][col] === this.FILLED && !this.correctlyFilledCells.has(cellPosition)) {
+                            this.correctlyFilledCells.add(cellPosition);
+                            this.comboCounter++;
+                            this.points += 10 * this.comboCounter;
+                        } else if (this.grid[row][col] !== this.FILLED) {
+                            this.comboCounter = 0;
+                        }
+                    }
+                    
+                    this.playerGrid[row][col] = value;
+                }
+                
+                // Fehlerprüfung nur beim Ausfüllen
+                if (value === this.FILLED && oldValue !== this.FILLED) {
+                    if (this.grid[row][col] !== this.FILLED) {
+                        this.errors++;
+                        this.comboCounter = 0;
+                        this.playerGrid[row][col] = this.AUTO_CROSSED;
+                        
+                        if (this.errors > this.maxErrors) {
+                            this.gameLost = true;
+                            this.stopTimer();
+                            this.showResultDialog();
+                        }
+                        
+                        this.updateCellDisplay(row, col);
+                        this.updateUI();
+                        return;
+                    }
+                }
+                
+                this.updateCellDisplay(row, col);
+                
+                // Auto-Cross prüfen
+                if (this.autoCrossMode && value !== this.NOTE) {
+                    this.checkAndAutocrossRow(row);
+                    this.checkAndAutocrossCol(col);
+                }
+                
+                this.checkWin();
+                this.updateUI();
+            }
+
+            updateCellDisplay(row, col) {
+                const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                const value = this.playerGrid[row][col];
+                
+                // Alle Klassen entfernen
+                cell.classList.remove('filled', 'crossed', 'auto-crossed', 'note');
+                cell.style.backgroundColor = '';
+                
+                if (value === this.FILLED) {
+                    cell.classList.add('filled');
+                    cell.style.backgroundColor = this.cellColors[row][col];
+                } else if (value === this.CROSSED) {
+                    cell.classList.add('crossed');
+                } else if (value === this.AUTO_CROSSED) {
+                    cell.classList.add('auto-crossed');
+                } else if (value === this.NOTE) {
+                    cell.classList.add('note');
+                }
+            }
+
+            checkAndAutocrossRow(row) {
+                let rowComplete = true;
+                
+                for (let col = 0; col < this.cols; col++) {
+                    const currentValue = this.playerGrid[row][col] === this.NOTE ? this.EMPTY : this.playerGrid[row][col];
+                    
+                    if (this.grid[row][col] === this.FILLED && currentValue !== this.FILLED) {
+                        rowComplete = false;
+                        break;
+                    }
+                    if (this.grid[row][col] !== this.FILLED && currentValue === this.FILLED) {
+                        rowComplete = false;
+                        break;
+                    }
+                }
+                
+                if (rowComplete && !this.completedRows[row]) {
+                    this.completedRows[row] = true;
+                    
+                    for (let col = 0; col < this.cols; col++) {
+                        if (this.grid[row][col] !== this.FILLED && 
+                            (this.playerGrid[row][col] === this.EMPTY || this.playerGrid[row][col] === this.NOTE)) {
+                            this.playerGrid[row][col] = this.AUTO_CROSSED;
+                            this.updateCellDisplay(row, col);
+                        }
+                    }
+                    
+                    this.updateRowHint(row);
+                }
+            }
+
+            checkAndAutocrossCol(col) {
+                let colComplete = true;
+                
+                for (let row = 0; row < this.rows; row++) {
+                    const currentValue = this.playerGrid[row][col] === this.NOTE ? this.EMPTY : this.playerGrid[row][col];
+                    
+                    if (this.grid[row][col] === this.FILLED && currentValue !== this.FILLED) {
+                        colComplete = false;
+                        break;
+                    }
+                    if (this.grid[row][col] !== this.FILLED && currentValue === this.FILLED) {
+                        colComplete = false;
+                        break;
+                    }
+                }
+                
+                if (colComplete && !this.completedCols[col]) {
+                    this.completedCols[col] = true;
+                    
+                    for (let row = 0; row < this.rows; row++) {
+                        if (this.grid[row][col] !== this.FILLED && 
+                            (this.playerGrid[row][col] === this.EMPTY || this.playerGrid[row][col] === this.NOTE)) {
+                            this.playerGrid[row][col] = this.AUTO_CROSSED;
+                            this.updateCellDisplay(row, col);
+                        }
+                    }
+                    
+                    this.updateColHint(col);
+                }
+            }
+
+            updateRowHint(row) {
+                const hints = document.getElementById('rowHints').children;
+                if (hints[row]) {
+                    hints[row].classList.toggle('completed', this.completedRows[row]);
+                }
+            }
+
+            updateColHint(col) {
+                const hints = document.getElementById('colHints').children;
+                if (hints[col]) {
+                    hints[col].classList.toggle('completed', this.completedCols[col]);
+                }
+            }
+
+            checkWin() {
+                if (this.gameLost) return false;
+                
+                for (let row = 0; row < this.rows; row++) {
+                    for (let col = 0; col < this.cols; col++) {
+                        const currentValue = this.playerGrid[row][col] === this.NOTE ? this.EMPTY : this.playerGrid[row][col];
+                        
+                        if (this.grid[row][col] === this.FILLED && currentValue !== this.FILLED) {
+                            return false;
+                        }
+                        if (this.grid[row][col] !== this.FILLED && currentValue === this.FILLED) {
+                            return false;
+                        }
+                    }
+                }
+                
+                this.gameWon = true;
+                this.stopTimer();
+                this.calculateFinalScore();
+                this.showResultDialog();
+                return true;
+            }
+
+            calculateFinalScore() {
+                const baseScore = this.points;
+                const elapsedSeconds = this.elapsedTime / 1000;
+                const totalCells = this.rows * this.cols;
+                const expectedTime = totalCells * 0.5;
+                
+                // Effizienz-Bonus (weniger manuelle Markierungen)
+                const markingCount = 0; // Vereinfacht für Web-Version
+                const markingPercentage = markingCount / totalCells;
+                const efficiencyBonus = Math.max(0, Math.floor(baseScore * 0.3 * (1 - markingPercentage)));
+                
+                // Zeit-Bonus
+                let timeBonus = 0;
+                if (elapsedSeconds < expectedTime) {
+                    const timeFactor = Math.min(2.0, expectedTime / Math.max(1, elapsedSeconds));
+                    timeBonus = Math.floor(baseScore * 0.5 * (timeFactor - 1));
+                } else {
+                    timeBonus = Math.floor(baseScore * 0.1 * Math.min(1.0, expectedTime / Math.max(1, elapsedSeconds)));
+                }
+                
+                // Fehlerfreier Bonus
+                const errorFreeBonus = this.errors === 0 ? Math.floor(baseScore * 0.2) : 0;
+                
+                this.finalScore = baseScore + efficiencyBonus + timeBonus + errorFreeBonus;
+                this.points = this.finalScore;
+                
+                this.scoreDetails = {
+                    baseScore,
+                    efficiencyBonus,
+                    timeBonus,
+                    errorFreeBonus,
+                    totalScore: this.finalScore
+                };
+            }
+
+            checkGridForErrors() {
+                let errorsCorrected = false;
+                
+                for (let row = 0; row < this.rows; row++) {
+                    for (let col = 0; col < this.cols; col++) {
+                        // Falsche Kreuze entfernen
+                        if ((this.playerGrid[row][col] === this.CROSSED || this.playerGrid[row][col] === this.AUTO_CROSSED) 
+                            && this.grid[row][col] === this.FILLED) {
+                            this.playerGrid[row][col] = this.EMPTY;
+                            this.updateCellDisplay(row, col);
+                            errorsCorrected = true;
+                        }
+                        
+                        // Falsche Füllungen entfernen
+                        if (this.playerGrid[row][col] === this.FILLED && this.grid[row][col] !== this.FILLED) {
+                            this.playerGrid[row][col] = this.EMPTY;
+                            this.updateCellDisplay(row, col);
+                            errorsCorrected = true;
+                        }
+                    }
+                }
+                
+                if (errorsCorrected && this.autoCrossMode) {
+                    for (let row = 0; row < this.rows; row++) {
+                        this.checkAndAutocrossRow(row);
+                    }
+                    for (let col = 0; col < this.cols; col++) {
+                        this.checkAndAutocrossCol(col);
+                    }
+                }
+                
+                this.checkWin();
+                this.updateUI();
+            }
+
+            startTimer() {
+                this.timerRunning = true;
+                this.startTime = Date.now();
+                this.timerInterval = setInterval(() => {
+                    this.elapsedTime = Date.now() - this.startTime;
+                    this.updateTimerDisplay();
+                }, 1000);
+            }
+
+            stopTimer() {
+                this.timerRunning = false;
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+            }
+
+            resetTimer() {
+                this.elapsedTime = 0;
+                this.updateTimerDisplay();
+            }
+
+            updateTimerDisplay() {
+                const seconds = Math.floor(this.elapsedTime / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                
+                document.getElementById('timerDisplay').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+
+            updateUI() {
+                document.getElementById('errorDisplay').textContent = 
+                    `${this.localization.getString('errors')}: ${this.errors}/${this.maxErrors}`;
+                document.getElementById('pointsDisplay').textContent = 
+                    `${this.localization.getString('points')}: ${this.points}`;
+                document.getElementById('comboDisplay').textContent = 
+                    `${this.localization.getString('combo')}: x${this.comboCounter}`;
+            }
+
+            showResultDialog() {
+                const overlay = document.getElementById('resultOverlay');
+                const dialog = document.getElementById('resultDialog');
+                const title = document.getElementById('resultTitle');
+                const details = document.getElementById('scoreDetails');
+                const subtext = document.getElementById('resultSubtext');
+                
+                overlay.classList.remove('hidden');
+                
+                if (this.gameWon) {
+                    dialog.className = 'result-dialog won';
+                    title.className = 'result-title won';
+                    
+                    // Highscore speichern und prüfen ob es ein neuer Rekord ist
+                    const isNewRecord = this.highScoreManager.addScore(
+                        this.currentSize, 
+                        this.finalScore, 
+                        this.elapsedTime, 
+                        this.errors, 
+                        this.loadedPredefinedImage
+                    );
+                    
+                    // Titel basierend auf Rekord setzen
+                    if (isNewRecord) {
+                        title.innerHTML = this.localization.getString('newHighscore') + '<br>' + this.localization.getString('puzzleSolved');
+                    } else {
+                        title.textContent = this.localization.getString('puzzleSolved');
+                    }
+                    
+                    // Score Details anzeigen
+                    if (this.scoreDetails) {
+                        details.innerHTML = `
+                            <div class="score-line">${this.localization.getString('basePoints')}: ${this.scoreDetails.baseScore}</div>
+                            <div class="score-line">${this.localization.getString('efficiencyBonus')}: +${this.scoreDetails.efficiencyBonus}</div>
+                            <div class="score-line">${this.localization.getString('timeBonus')}: +${this.scoreDetails.timeBonus}</div>
+                            ${this.scoreDetails.errorFreeBonus > 0 ? `<div class="score-line">${this.localization.getString('errorFreeBonus')}: +${this.scoreDetails.errorFreeBonus}</div>` : ''}
+                            <div class="score-line"><strong>${this.localization.getString('totalScore')}: ${this.scoreDetails.totalScore}</strong></div>
+                        `;
+                    }
+                    
+                    subtext.textContent = this.localization.getString('newPuzzleHint');
+                    
+                    // Highscore Display aktualisieren
+                    this.updateHighScoreDisplay();
+                    
+                } else {
+                    dialog.className = 'result-dialog lost';
+                    title.className = 'result-title lost';
+                    title.textContent = this.localization.getString('tooManyErrors');
+                    details.innerHTML = '';
+                    subtext.textContent = this.localization.getString('restartHint');
+                }
+            }
+
+            hideResultDialog() {
+                document.getElementById('resultOverlay').classList.add('hidden');
+            }
+
+
+            setupLanguageButtons() {
+                const deBut = document.getElementById('langDe');
+                const enBut = document.getElementById('langEn');
+                
+                // Aktive Sprache markieren
+                this.updateLanguageButtonStates();
+                
+                deBut.addEventListener('click', () => {
+                    if (this.localization.currentLanguage !== 'de') {
+                        this.localization.setLanguage('de');
+                        this.updateLanguageButtonStates();
+                        this.updateAllTexts();
+                        this.updateHighScoreDisplay();
+                    }
+                });
+                
+                enBut.addEventListener('click', () => {
+                    if (this.localization.currentLanguage !== 'en') {
+                        this.localization.setLanguage('en');
+                        this.updateLanguageButtonStates();
+                        this.updateAllTexts();
+                        this.updateHighScoreDisplay();
+                    }
+                });
+            }
+
+            updateLanguageButtonStates() {
+                const deBut = document.getElementById('langDe');
+                const enBut = document.getElementById('langEn');
+                
+                deBut.classList.toggle('active', this.localization.currentLanguage === 'de');
+                enBut.classList.toggle('active', this.localization.currentLanguage === 'en');
+            }
+
+            updateAllTexts() {
+                document.querySelector('.title').textContent = this.localization.getString('title');
+                
+                // Alle control-labels aktualisieren
+                const controlLabels = document.querySelectorAll('.control-label');
+                controlLabels[0].textContent = this.localization.getString('gridSize'); // Spielfeldgröße
+                controlLabels[1].textContent = this.localization.getString('currentTool'); // Aktuelles Werkzeug
+                controlLabels[2].textContent = this.localization.getString('colorPicker'); // Farbwähler
+                
+                // Dropdown-Optionen aktualisieren
+                const options = document.querySelectorAll('.dropdown-option span:first-child');
+                const sizes = ['easy', 'medium', 'hard', 'rectangular', 'rectangular', 'rectangular', 'rectangular', 'rectangular'];
+                const numbers = ['5x5', '10x10', '15x15', '5x10', '10x15', '10x5', '15x10', '20x15'];
+                
+                options.forEach((option, index) => {
+                    if (index < 3) {
+                        option.textContent = `${this.localization.getString(sizes[index])} (${numbers[index]})`;
+                    } else {
+                        option.textContent = `${this.localization.getString('rectangular')} ${index-2} (${numbers[index]})`;
+                    }
+                });
+                
+                // Dropdown Selected Text basierend auf aktueller Größe aktualisieren
+                this.updateDropdownSelectedText();
+                
+                // Timer Label
+                document.querySelector('.timer-section div:first-child strong').textContent = this.localization.getString('time') + ':';
+                
+                // Initiale UI-Texte setzen
+                this.updateUI(); // Dies wird die übersetzten Texte für Fehler, etc. setzen
+                
+                // Auto-Cross Status setzen
+                document.getElementById('autoCrossStatus').textContent = 
+                    this.autoCrossMode ? this.localization.getString('autoCrossOn') : this.localization.getString('autoCrossOff');
+                
+                // Aktuelle Farbe aktualisieren
+                const colorText = this.localization.getColorName(this.selectedColor);
+                document.getElementById('currentColorText').textContent = 
+                    `${this.localization.getString('currentColor')}: ${colorText}`;
+                
+                // Tool-Namen aktualisieren
+                this.updateToolDisplay();
+                
+                // Instructions aktualisieren
+                const instructions = document.querySelector('.instructions');
+                if (this.localization.currentLanguage === 'de') {
+                    instructions.innerHTML = `
+                        <strong>${this.localization.getString('controls')}</strong><br>
+                        T: Zwischen Stift/Durchstreichen wechseln<br>
+                        H/O: Notiz-Werkzeug aktivieren/deaktivieren<br>
+                        A: Auto-Durchstreichen ein/aus<br>
+                        C: Raster auf Fehler prüfen<br>
+                        Linksklick/Ziehen: Zelle markieren<br>
+                        Rechtsklick: Alternative Markierung<br>
+                        R: Puzzle zurücksetzen<br>
+                        N: Neues Puzzle<br>
+                        E: Neues Bildpuzzle
+                    `;
+                } else {
+                    instructions.innerHTML = `
+                        <strong>${this.localization.getString('controls')}</strong><br>
+                        T: Toggle Pen/Cross tool<br>
+                        H/O: Toggle Note tool<br>
+                        A: Toggle Auto-Cross<br>
+                        C: Check grid for errors<br>
+                        Left click/drag: Mark cell<br>
+                        Right click: Alternative marking<br>
+                        R: Reset puzzle<br>
+                        N: New puzzle<br>
+                        E: New image puzzle
+                    `;
+                }
+            }
+
+            updateDropdownSelectedText() {
+                const sizeMap = {
+                    "5,5": { key: 'easy', size: '5x5' },
+                    "10,10": { key: 'medium', size: '10x10' },
+                    "15,15": { key: 'hard', size: '15x15' },
+                    "5,10": { key: 'rectangular', size: '5x10', num: 1 },
+                    "10,15": { key: 'rectangular', size: '10x15', num: 2 },
+                    "10,5": { key: 'rectangular', size: '10x5', num: 3 },
+                    "15,10": { key: 'rectangular', size: '15x10', num: 4 },
+                    "20,15": { key: 'rectangular', size: '20x15', num: 5 }
+                };
+                
+                const mapping = sizeMap[this.currentSize];
+                if (mapping) {
+                    let text;
+                    if (mapping.num) {
+                        text = `${this.localization.getString(mapping.key)} ${mapping.num} (${mapping.size})`;
+                    } else {
+                        text = `${this.localization.getString(mapping.key)} (${mapping.size})`;
+                    }
+                    document.getElementById('dropdownSelected').querySelector('span').textContent = text;
+                }
+            }
+
+            updateHighScoreDisplay() {
+                this.highScoreManager.displayHighScores(this.currentSize, this.loadedPredefinedImage);
+            }
+
+
+        }
+
+        // Event-Listener für Maus-Events auf Document-Level
+        document.addEventListener('mouseup', (e) => {
+            if (window.game) {
+                window.game.isDragging = false;
+                window.game.lastCell = null;
+                window.game.dragValue = null;
+            }
+        });
+
+        // Zusätzliche Sicherheit für den Fall, dass die Maus das Spielfeld verlässt
+        document.addEventListener('mouseleave', (e) => {
+            if (window.game) {
+                window.game.isDragging = false;
+                window.game.lastCell = null;
+                window.game.dragValue = null;
+            }
+        });
+
+        // Auch für das Game-Grid Container
+        document.getElementById('gameGrid').addEventListener('mouseleave', (e) => {
+            if (window.game) {
+                window.game.isDragging = false;
+                window.game.lastCell = null;
+                window.game.dragValue = null;
+            }
+        });
+
+        // Spiel initialisieren
+        window.game = new NonogrammGame();
+    </script>
+</body>
+</html>
